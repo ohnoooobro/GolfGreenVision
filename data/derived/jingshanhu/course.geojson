@@ -1,0 +1,902 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "id": "jingshanhu-v0.5",
+    "name": "北京净山湖高尔夫俱乐部（V0.5）",
+    "source": "Tiger Booking hole table; Bestdo course summary; Bing Maps place card; OpenStreetMap Overpass spatial reference",
+    "coordinateSystem": "WGS84",
+    "verified": false,
+    "demo": false,
+    "dataStatus": "unverified",
+    "provenance": [
+      "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279",
+      "https://weixin.bestdo.com/wx/item/info?mer_item_id=10200931000018",
+      "https://cn.bing.com/search?q=%E5%87%80%E5%B1%B1%E6%B9%96%E9%AB%98%E5%B0%94%E5%A4%AB",
+      "https://overpass-api.de/api/interpreter"
+    ]
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 1,
+        "par": 4,
+        "teeYardages": {
+          "gold": 393,
+          "blue": 350,
+          "white": 296,
+          "red": 267
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 2,
+        "par": 4,
+        "teeYardages": {
+          "gold": 405,
+          "blue": 360,
+          "white": 326,
+          "red": 303
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 3,
+        "par": 5,
+        "teeYardages": {
+          "gold": 543,
+          "blue": 522,
+          "white": 497,
+          "red": 422
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 4,
+        "par": 4,
+        "teeYardages": {
+          "gold": 453,
+          "blue": 412,
+          "white": 373,
+          "red": 317
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 5,
+        "par": 4,
+        "teeYardages": {
+          "gold": 408,
+          "blue": 379,
+          "white": 348,
+          "red": 276
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 6,
+        "par": 3,
+        "teeYardages": {
+          "gold": 223,
+          "blue": 200,
+          "white": 174,
+          "red": 147
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 7,
+        "par": 5,
+        "teeYardages": {
+          "gold": 575,
+          "blue": 547,
+          "white": 518,
+          "red": 469
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 8,
+        "par": 4,
+        "teeYardages": {
+          "gold": 359,
+          "blue": 328,
+          "white": 302,
+          "red": 269
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 9,
+        "par": 3,
+        "teeYardages": {
+          "gold": 200,
+          "blue": 176,
+          "white": 152,
+          "red": 121
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 10,
+        "par": 5,
+        "teeYardages": {
+          "gold": 603,
+          "blue": 576,
+          "white": 522,
+          "red": 481
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 11,
+        "par": 4,
+        "teeYardages": {
+          "gold": 358,
+          "blue": 325,
+          "white": 301,
+          "red": 274
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 12,
+        "par": 3,
+        "teeYardages": {
+          "gold": 217,
+          "blue": 156,
+          "white": 156,
+          "red": 135
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 13,
+        "par": 4,
+        "teeYardages": {
+          "gold": 458,
+          "blue": 446,
+          "white": 420,
+          "red": 403
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 14,
+        "par": 4,
+        "teeYardages": {
+          "gold": 488,
+          "blue": 461,
+          "white": 440,
+          "red": 398
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 15,
+        "par": 5,
+        "teeYardages": {
+          "gold": 609,
+          "blue": 575,
+          "white": 530,
+          "red": 469
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 16,
+        "par": 4,
+        "teeYardages": {
+          "gold": 318,
+          "blue": 298,
+          "white": 276,
+          "red": 252
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 17,
+        "par": 3,
+        "teeYardages": {
+          "gold": 168,
+          "blue": 168,
+          "white": 145,
+          "red": 141
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "hole": 18,
+        "par": 4,
+        "teeYardages": {
+          "gold": 380,
+          "blue": 352,
+          "white": 322,
+          "red": 275
+        },
+        "greenCenter": null,
+        "source": "Tiger Booking hole table",
+        "provenance": {
+          "hole": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "par": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeYardages": [
+            "https://www.tigerbooking.com/zh/cn/golf-course/Jingshanhu-Golf-Club-TACN0279"
+          ],
+          "teeCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "greenCenter": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ],
+          "centerline": [
+            "data/metadata/jingshanhu_v0_5.md"
+          ]
+        },
+        "holeNumberVerified": true,
+        "parStatus": "unverified",
+        "polygonStatus": "unknown",
+        "greenCenterStatus": "unknown",
+        "verified": false,
+        "teeCenter": null,
+        "centerline": null,
+        "spatialConfidence": "none",
+        "spatialVerified": false,
+        "teeCenterStatus": "unknown",
+        "centerlineStatus": "unknown",
+        "spatialDigitization": "none",
+        "spatialEstimated": false
+      }
+    }
+  ]
+}
