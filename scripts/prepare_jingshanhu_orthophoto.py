@@ -289,6 +289,8 @@ def prepare(raster_path: Path, source_dir: Path, output_dir: Path) -> dict[str, 
                 "description": to_wgs84.description,
                 "definition": to_wgs84.definition,
                 "accuracyMetres": to_wgs84.accuracy,
+                "independentDatumValidation": False,
+                "precisionLimitation": "当前仅使用 pyproj 可用的 EPSG:4548 → WGS84 转换；没有现场控制点、RTK 或其他独立基准验证。正射影像约 0.26 m/pixel 不等于最终 WGS84 绝对坐标具有同等精度。",
             },
             "alphaAndNoData": alpha_summary(dataset),
             "preview": {

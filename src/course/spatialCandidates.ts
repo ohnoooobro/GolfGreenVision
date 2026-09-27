@@ -178,6 +178,9 @@ export function validateSpatialCandidates(document: SpatialCandidatesDocument): 
     if (hole.status === 'unknown' && (hole.bestCandidate !== null || hole.alternatives.length > 0)) issues.push({ code: 'unknown-has-candidate', hole: hole.hole, message: `unknown 洞不能带正式候选。` })
     if (hole.status !== 'unknown' && !validMatch(hole.bestCandidate, corridors, objectIds)) issues.push({ code: 'missing-best-candidate', hole: hole.hole, message: `洞 ${hole.hole} 的非 unknown 状态必须引用有效 bestCandidate。` })
     if (hole.status === 'high-confidence-inferred' && !hasText(hole.evidence)) issues.push({ code: 'missing-candidate-evidence', hole: hole.hole, message: `high-confidence-inferred 洞必须有 evidence。` })
+    if (hole.status === 'high-confidence-inferred' && hole.mappingIndependentEvidence !== true) {
+      issues.push({ code: 'missing-independent-evidence', hole: hole.hole, message: `洞 ${hole.hole} 只有在 mappingIndependentEvidence=true 时才能进入 high-confidence-inferred；当前应保持 candidate。` })
+    }
     if (hole.fieldConfirmed && hole.status !== 'field-confirmed') issues.push({ code: 'confirmation-status-mismatch', hole: hole.hole, message: `fieldConfirmed=true 时状态必须为 field-confirmed。` })
     if (hole.status === 'field-confirmed' && (!hole.fieldConfirmed || !hole.mappingIndependentEvidence)) issues.push({ code: 'missing-confirmation-source', hole: hole.hole, message: `field-confirmed 洞必须包含独立确认标记。` })
     if (!hole.provenance?.holeParDistance || !hole.provenance?.candidateMethod) issues.push({ code: 'missing-candidate-provenance', hole: hole.hole, message: `洞 ${hole.hole} 缺少候选来源引用。` })

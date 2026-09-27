@@ -64,4 +64,20 @@ describe('净山湖 V0 数据集', () => {
     expect(orthophotoMetadata.validation.rasterAndPrjEpsgMatch).toBe(true)
     expect(orthophotoMetadata.validation.worldFilePixelSizeAndRotationMatch).toBe(true)
   })
+
+  it('没有独立证据时拒绝 high-confidence-inferred 映射', () => {
+    const promoted = structuredClone(spatialCandidates)
+    promoted.holes[0].status = 'high-confidence-inferred'
+    promoted.holes[0].mappingIndependentEvidence = false
+    const issues = validateSpatialCandidates(promoted)
+    expect(issues.some((issue) => issue.code === 'missing-independent-evidence' && issue.hole === 1)).toBe(true)
+  })
+
+  it('明确独立证据后才允许 high-confidence-inferred 状态通过该校验', () => {
+    const promoted = structuredClone(spatialCandidates)
+    promoted.holes[0].status = 'high-confidence-inferred'
+    promoted.holes[0].mappingIndependentEvidence = true
+    const issues = validateSpatialCandidates(promoted)
+    expect(issues.some((issue) => issue.code === 'missing-independent-evidence' && issue.hole === 1)).toBe(false)
+  })
 })

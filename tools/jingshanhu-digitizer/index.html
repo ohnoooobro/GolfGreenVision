@@ -68,6 +68,7 @@
               <span id="candidateScore" class="score-badge">—</span>
             </div>
             <div id="candidateSummary" class="candidate-summary"></div>
+            <p class="field-note">候选排序分仅用于候选排序，不代表正确概率。</p>
             <div class="candidate-links" id="candidateLinks"></div>
             <div class="candidate-list" id="alternativeList"></div>
           </section>
@@ -121,6 +122,31 @@
               <button type="button" data-event-outcome="correct">正确</button>
               <button type="button" data-event-outcome="not-this-hole">不是这个洞</button>
               <button type="button" data-event-outcome="uncertain">暂不确定</button>
+            </div>
+            <div id="notThisHoleChoice" class="not-this-hole-choice" hidden>
+              <label class="field-label" for="actualHoleSelect">实际洞号</label>
+              <select id="actualHoleSelect">
+                <option value="uncertain">不确定</option>
+                <option value="1">Hole 1</option>
+                <option value="2">Hole 2</option>
+                <option value="3">Hole 3</option>
+                <option value="4">Hole 4</option>
+                <option value="5">Hole 5</option>
+                <option value="6">Hole 6</option>
+                <option value="7">Hole 7</option>
+                <option value="8">Hole 8</option>
+                <option value="9">Hole 9</option>
+                <option value="10">Hole 10</option>
+                <option value="11">Hole 11</option>
+                <option value="12">Hole 12</option>
+                <option value="13">Hole 13</option>
+                <option value="14">Hole 14</option>
+                <option value="15">Hole 15</option>
+                <option value="16">Hole 16</option>
+                <option value="17">Hole 17</option>
+                <option value="18">Hole 18</option>
+              </select>
+              <button type="button" id="saveNotThisHoleButton" class="primary-button">保存实际洞号</button>
             </div>
             <div id="eventSaved" class="event-log" aria-live="polite"></div>
           </section>

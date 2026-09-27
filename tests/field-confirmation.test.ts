@@ -33,4 +33,16 @@ describe('现场确认事件', () => {
     expect(event.actualHole).toBe('uncertain')
     expect(isValidFieldConfirmationEvent({ ...event, position: { latitude: 91, longitude: 116.43 } })).toBe(false)
   })
+
+  it('正确操作把预测洞记录为实际洞，并允许没有现场坐标', () => {
+    const event = createFieldConfirmationEvent({
+      predictedHole: 4,
+      actualHole: 4,
+      confirmationSource: 'field',
+    })
+    expect(event.predictedHole).toBe(4)
+    expect(event.actualHole).toBe(4)
+    expect(event.position).toBeUndefined()
+    expect(isValidFieldConfirmationEvent(event)).toBe(true)
+  })
 })

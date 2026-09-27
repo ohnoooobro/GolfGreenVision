@@ -270,7 +270,9 @@
       "alwaysXY": true,
       "description": "Inverse of Gauss-Kruger CM 117E + Ballpark geographic offset from China Geodetic Coordinate System 2000 to WGS 84 (with axis order normalized for visualization)",
       "definition": "proj=pipeline step inv proj=tmerc lat_0=0 lon_0=117 k=1 x_0=500000 y_0=0 ellps=GRS80 step proj=unitconvert xy_in=rad xy_out=deg",
-      "accuracyMetres": -1.0
+      "accuracyMetres": -1.0,
+      "independentDatumValidation": false,
+      "precisionLimitation": "当前仅使用 pyproj 可用的 EPSG:4548 → WGS84 转换；没有现场控制点、RTK 或其他独立基准验证。正射影像约 0.26 m/pixel 不等于最终 WGS84 绝对坐标具有同等精度。"
     },
     "alphaAndNoData": {
       "present": true,

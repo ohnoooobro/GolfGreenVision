@@ -43,6 +43,9 @@ const elements = {
   eventLatitude: document.querySelector('#eventLatitude'),
   eventLongitude: document.querySelector('#eventLongitude'),
   capturePositionButton: document.querySelector('#capturePositionButton'),
+  notThisHoleChoice: document.querySelector('#notThisHoleChoice'),
+  actualHoleSelect: document.querySelector('#actualHoleSelect'),
+  saveNotThisHoleButton: document.querySelector('#saveNotThisHoleButton'),
   eventSaved: document.querySelector('#eventSaved'),
 }
 
@@ -84,7 +87,7 @@ function renderPanel() {
   elements.holeStatus.textContent = hole.status
   elements.holeSummary.innerHTML = `<span>Par ${escapeHtml(hole.par)}</span><span>Gold ${escapeHtml(hole.teeYardages.gold)} yd</span><span>Blue ${escapeHtml(hole.teeYardages.blue)} yd</span><span>White ${escapeHtml(hole.teeYardages.white)} yd</span><span>Red ${escapeHtml(hole.teeYardages.red)} yd</span>`
   elements.candidateTitle.textContent = candidate ? `${candidate.tee} → ${candidate.green} · ${candidate.corridor}` : '没有可用候选'
-  elements.candidateScore.textContent = candidate ? `score ${formatScore(candidate.score)}` : '—'
+  elements.candidateScore.textContent = candidate ? `候选排序分 ${formatScore(candidate.score)}` : '—'
   if (candidate) {
     elements.candidateSummary.innerHTML = [
       ['Tee', candidate.tee], ['Green', candidate.green], ['直线 proxy', formatMeters(candidate.lineLengthMetres)],
@@ -105,7 +108,7 @@ function renderPanel() {
     button.addEventListener('click', () => { state.selectedCandidateIndex = index; renderPanel(); drawMap() }); elements.candidateLinks.append(button)
   })
   elements.alternativeList.innerHTML = hole.alternatives.length
-    ? hole.alternatives.map((match, index) => `<button type="button" class="alternative-card${index + 1 === state.selectedCandidateIndex ? ' active' : ''}" data-alternative-index="${index + 1}"><strong>${escapeHtml(match.tee)} → ${escapeHtml(match.green)} · ${escapeHtml(match.corridor)}</strong><small>score ${formatScore(match.score)} · ${formatMeters(match.lineLengthMetres)} · ${escapeHtml(match.matchedTeeVariant)} ${escapeHtml(match.matchedYardage)} yd</small></button>`).join('')
+    ? hole.alternatives.map((match, index) => `<button type="button" class="alternative-card${index + 1 === state.selectedCandidateIndex ? ' active' : ''}" data-alternative-index="${index + 1}"><strong>${escapeHtml(match.tee)} → ${escapeHtml(match.green)} · ${escapeHtml(match.corridor)}</strong><small>候选排序分 ${formatScore(match.score)} · ${formatMeters(match.lineLengthMetres)} · ${escapeHtml(match.matchedTeeVariant)} ${escapeHtml(match.matchedYardage)} yd</small></button>`).join('')
     : '<p class="field-note">暂无替代候选。</p>'
   elements.alternativeList.querySelectorAll('[data-alternative-index]').forEach((button) => button.addEventListener('click', () => { state.selectedCandidateIndex = Number(button.dataset.alternativeIndex); renderPanel(); drawMap() }))
   renderList(elements.evidenceList, candidate?.evidence || hole.evidence)
@@ -116,13 +119,15 @@ function renderPanel() {
   elements.pendingButton.classList.toggle('pending', review.pending)
   elements.pendingButton.textContent = review.pending ? '已标记待现场确认' : '标记待现场确认'
   elements.reviewSaved.textContent = review.updatedAt ? `最近保存：${new Date(review.updatedAt).toLocaleString('zh-CN')}` : ''
+  elements.notThisHoleChoice.hidden = true
 }
 
 function renderEventLog() {
   const latest = state.events[0]
   if (!latest) { elements.eventSaved.textContent = '尚未记录现场事件。'; return }
   const labels = { correct: '正确', 'not-this-hole': '不是这个洞', uncertain: '暂不确定' }
-  elements.eventSaved.textContent = `最近事件：预测 Hole ${latest.predictedHole ?? '—'} · ${labels[latest.outcome] || latest.outcome} · ${new Date(latest.timestamp).toLocaleString('zh-CN')}`
+  const actual = latest.actualHole === 'uncertain' ? '实际洞号不确定' : `实际 Hole ${latest.actualHole ?? '—'}`
+  elements.eventSaved.textContent = `最近事件：预测 Hole ${latest.predictedHole ?? '—'} · ${actual} · ${labels[latest.outcome] || latest.outcome} · ${new Date(latest.timestamp).toLocaleString('zh-CN')}`
 }
 
 function saveReview(patch) {
@@ -132,25 +137,34 @@ function saveReview(patch) {
   saveJson(REVIEW_STORAGE_KEY, state.review); renderPanel()
 }
 
-function recordEvent(outcome) {
-  const latitude = Number(elements.eventLatitude.value)
-  const longitude = Number(elements.eventLongitude.value)
-  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-    elements.eventSaved.textContent = '请先填写现场 WGS84 纬度和经度，或点击“读取当前 GPS”。'
+function recordEvent(outcome, actualHoleOverride) {
+  const latitudeText = elements.eventLatitude.value.trim()
+  const longitudeText = elements.eventLongitude.value.trim()
+  const hasLatitude = latitudeText.length > 0
+  const hasLongitude = longitudeText.length > 0
+  if (hasLatitude !== hasLongitude) {
+    elements.eventSaved.textContent = '现场坐标需要同时填写纬度和经度，或留空不记录位置。'
     return
   }
+  const latitude = Number(latitudeText)
+  const longitude = Number(longitudeText)
+  if ((hasLatitude && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180))) {
+    elements.eventSaved.textContent = '现场 WGS84 坐标无效，请修正后重试。'
+    return
+  }
+  const actualHole = outcome === 'correct' ? currentHole()?.hole ?? null : outcome === 'not-this-hole' ? actualHoleOverride ?? 'uncertain' : 'uncertain'
   const event = {
     schemaVersion: 1,
     timestamp: new Date().toISOString(),
     predictedHole: currentHole()?.hole ?? null,
-    actualHole: outcome === 'correct' ? currentHole()?.hole ?? null : 'uncertain',
+    actualHole,
     outcome,
     confirmationSource: 'field',
-    position: { latitude, longitude },
     note: state.review[String(state.selectedHole)]?.note || undefined,
   }
+  if (hasLatitude) event.position = { latitude, longitude }
   state.events = [event, ...state.events].slice(0, 50)
-  saveJson(EVENTS_STORAGE_KEY, state.events); renderEventLog()
+  saveJson(EVENTS_STORAGE_KEY, state.events); elements.notThisHoleChoice.hidden = true; renderEventLog()
 }
 
 function drawGeometry(ctx, geometry, style) {
@@ -227,7 +241,18 @@ function distanceToLine(point, coordinates) { let distance = Infinity; for (let 
 elements.holeSelect.addEventListener('change', () => { state.selectedHole = Number(elements.holeSelect.value); state.selectedCandidateIndex = 0; renderPanel(); drawMap() })
 elements.pendingButton.addEventListener('click', () => { const current = state.review[String(state.selectedHole)]?.pending; saveReview({ pending: !current }) })
 elements.saveNoteButton.addEventListener('click', () => { saveReview({ note: elements.reviewNote.value.trim() }); elements.reviewSaved.textContent = `已保存：${new Date().toLocaleString('zh-CN')}` })
-document.querySelectorAll('[data-event-outcome]').forEach((button) => button.addEventListener('click', () => recordEvent(button.dataset.eventOutcome)))
+document.querySelectorAll('[data-event-outcome]').forEach((button) => button.addEventListener('click', () => {
+  if (button.dataset.eventOutcome === 'not-this-hole') {
+    elements.notThisHoleChoice.hidden = false
+    elements.actualHoleSelect.focus()
+    return
+  }
+  recordEvent(button.dataset.eventOutcome)
+}))
+elements.saveNotThisHoleButton.addEventListener('click', () => {
+  const value = elements.actualHoleSelect.value
+  recordEvent('not-this-hole', value === 'uncertain' ? 'uncertain' : Number(value))
+})
 document.querySelector('#fitButton').addEventListener('click', fitView)
 document.querySelector('#resetButton').addEventListener('click', fitView)
 document.querySelector('#zoomInButton').addEventListener('click', () => zoomAt(1.25, elements.canvas.clientWidth / 2, elements.canvas.clientHeight / 2))

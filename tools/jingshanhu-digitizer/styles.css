@@ -82,6 +82,10 @@ li + li { margin-top: 5px; }
 .coordinate-grid dd { margin: 4px 0 0; overflow-wrap: anywhere; color: #eaf8e8; font-size: .74rem; font-variant-numeric: tabular-nums; }
 .field-note { margin-bottom: 10px; color: #aac7ae; font-size: .76rem; line-height: 1.5; }
 .field-actions, .event-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.not-this-hole-choice { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px 8px; align-items: end; margin-top: 9px; padding: 9px; border: 1px solid #7f6b3c; border-radius: 7px; background: #2c2818; }
+.not-this-hole-choice[hidden] { display: none; }
+.not-this-hole-choice .field-label { grid-column: 1 / -1; }
+.not-this-hole-choice select { min-width: 0; }
 .event-position-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 8px; margin: 9px 0 7px; }
 .event-position-grid input { min-width: 0; min-height: 32px; padding: 6px 8px; border: 1px solid #638c6d; border-radius: 5px; background: #10251b; color: #f4f7f2; font: inherit; font-size: .75rem; }
 .event-position-grid input:focus-visible { outline: 2px solid #8bb395; outline-offset: 1px; }
@@ -107,4 +111,5 @@ li + li { margin-top: 5px; }
   .map-viewport { min-height: 360px; height: 58vh; }
   .candidate-summary { grid-template-columns: 1fr 1fr; }
   .event-position-grid { grid-template-columns: 1fr; }
+  .not-this-hole-choice { grid-template-columns: 1fr; }
 }

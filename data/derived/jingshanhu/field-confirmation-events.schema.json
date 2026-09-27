@@ -3,7 +3,7 @@
   "title": "Jingshanhu field confirmation event",
   "description": "现场观察事件。事件用于后续复核，不会自动把空间候选提升为 field-confirmed。",
   "type": "object",
-  "required": ["schemaVersion", "timestamp", "predictedHole", "actualHole", "confirmationSource", "position"],
+  "required": ["schemaVersion", "timestamp", "predictedHole", "actualHole", "confirmationSource"],
   "properties": {
     "schemaVersion": { "const": 1 },
     "timestamp": { "type": "string", "format": "date-time" },
