@@ -1,4 +1,5 @@
 node_modules/
+.venv/
 dist/
 coverage/
 
@@ -17,6 +18,19 @@ yarn-debug.log*
 pnpm-debug.log*
 
 field-tests/private/
+
+/净山湖高尔夫球场2023.zip
+data/raw/**/*.zip
+data/raw/**/*.tif
+data/raw/**/*.tiff
+data/raw/jingshanhu_orthophoto_2023/
+data/derived/jingshanhu/orthophoto_2023_preview.jpg
+data/derived/jingshanhu/orthophoto_2023_preview_*.jpg
+!data/derived/jingshanhu/orthophoto_2023_preview_small.jpg
+data/derived/jingshanhu/orthophoto_2023_tiles/
+data/derived/jingshanhu/orthophoto_2023_cache/
+
+scripts/__pycache__/
 
 tmp/
 temp/

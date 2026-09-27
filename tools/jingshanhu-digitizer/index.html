@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#18362b">
+    <title>净山湖正射影像候选审查工作台</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Thread 03C · Jingshanhu V0.5</p>
+          <h1>净山湖正射影像候选配准</h1>
+          <p class="subtitle">查看空间候选、证据和现场确认准备状态。候选对象 ID 不代表洞号。</p>
+        </div>
+        <div class="header-meta" id="datasetMeta" aria-live="polite">正在读取候选数据…</div>
+      </header>
+
+      <div id="loadError" class="load-error" hidden></div>
+
+      <section class="workspace" aria-label="空间候选审查工作台">
+        <section class="map-panel">
+          <div class="map-toolbar">
+            <div class="toolbar-group" aria-label="地图操作">
+              <button type="button" id="fitButton" title="适应影像">适应</button>
+              <button type="button" id="zoomOutButton" title="缩小">−</button>
+              <button type="button" id="zoomInButton" title="放大">＋</button>
+              <button type="button" id="resetButton" title="重置视图">重置</button>
+            </div>
+            <div class="map-readout" id="mapReadout">—</div>
+          </div>
+          <div class="map-viewport" id="mapViewport">
+            <canvas id="mapCanvas" aria-label="净山湖 2023 正射影像和空间候选叠加图"></canvas>
+            <div class="map-loading" id="mapLoading">正在加载影像…</div>
+          </div>
+          <div class="legend" aria-label="图例">
+            <span><i class="legend-swatch green"></i>Green</span>
+            <span><i class="legend-swatch tee"></i>Tee</span>
+            <span><i class="legend-swatch corridor"></i>corridor</span>
+            <span><i class="legend-swatch water"></i>水体</span>
+            <span><i class="legend-swatch selected"></i>当前候选</span>
+          </div>
+          <p class="map-note">影像为浏览预览，overlay 使用原始影像像素坐标绘制。坐标输出为 EPSG:4326 / WGS84；corridor 是 Tee→Green 直线 proxy，不是球道边界。</p>
+        </section>
+
+        <aside class="review-panel">
+          <section class="panel-section hole-picker">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">空间候选</p>
+                <h2>选择洞号</h2>
+              </div>
+              <span id="holeStatus" class="status-badge">candidate</span>
+            </div>
+            <label class="field-label" for="holeSelect">公开资料洞号</label>
+            <select id="holeSelect" aria-label="选择公开资料洞号"></select>
+            <div class="hole-summary" id="holeSummary"></div>
+          </section>
+
+          <section class="panel-section candidate-section">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">Top candidate</p>
+                <h2 id="candidateTitle">等待数据</h2>
+              </div>
+              <span id="candidateScore" class="score-badge">—</span>
+            </div>
+            <div id="candidateSummary" class="candidate-summary"></div>
+            <div class="candidate-links" id="candidateLinks"></div>
+            <div class="candidate-list" id="alternativeList"></div>
+          </section>
+
+          <section class="panel-section evidence-section">
+            <div class="section-heading compact"><h2>证据与冲突</h2></div>
+            <div class="list-block">
+              <h3>支持证据</h3>
+              <ul id="evidenceList"><li>—</li></ul>
+            </div>
+            <div class="list-block conflict-list">
+              <h3>冲突 / 限制</h3>
+              <ul id="conflictList"><li>—</li></ul>
+            </div>
+          </section>
+
+          <section class="panel-section coordinate-section">
+            <div class="section-heading compact"><h2>当前候选 WGS84</h2></div>
+            <dl class="coordinate-grid" id="coordinateGrid"><div><dt>Tee</dt><dd>—</dd></div><div><dt>Green</dt><dd>—</dd></div></dl>
+          </section>
+
+          <section class="panel-section field-section">
+            <div class="section-heading compact">
+              <div>
+                <p class="section-kicker">现场确认准备</p>
+                <h2>保留待确认记录</h2>
+              </div>
+              <span id="pendingBadge" class="pending-badge" hidden>待现场确认</span>
+            </div>
+            <p class="field-note">这里的操作只保存本浏览器的审查状态，不会改变候选 JSON 的 status，也不会自动生成 field-confirmed。</p>
+            <label class="field-label" for="reviewNote">审查备注</label>
+            <textarea id="reviewNote" rows="3" placeholder="记录需要在现场核对的转场、方向或疑点"></textarea>
+            <div class="field-actions">
+              <button type="button" id="pendingButton" class="primary-button">标记待现场确认</button>
+              <button type="button" id="saveNoteButton">保存备注</button>
+            </div>
+            <p id="reviewSaved" class="saved-message" aria-live="polite"></p>
+          </section>
+
+          <section class="panel-section event-section">
+            <div class="section-heading compact"><h2>现场确认事件入口</h2></div>
+            <p class="field-note">到达球洞后快速记录预测是否正确。事件会保存到本浏览器，预测层仍保持原状态。</p>
+            <div class="event-position-grid">
+              <label class="field-label" for="eventLatitude">现场纬度（WGS84）</label>
+              <label class="field-label" for="eventLongitude">现场经度（WGS84）</label>
+              <input id="eventLatitude" type="number" inputmode="decimal" step="any" min="-90" max="90" placeholder="可用 GPS 自动填入">
+              <input id="eventLongitude" type="number" inputmode="decimal" step="any" min="-180" max="180" placeholder="可用 GPS 自动填入">
+            </div>
+            <button type="button" id="capturePositionButton" class="secondary-button">读取当前 GPS</button>
+            <div class="event-actions">
+              <button type="button" data-event-outcome="correct">正确</button>
+              <button type="button" data-event-outcome="not-this-hole">不是这个洞</button>
+              <button type="button" data-event-outcome="uncertain">暂不确定</button>
+            </div>
+            <div id="eventSaved" class="event-log" aria-live="polite"></div>
+          </section>
+        </aside>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

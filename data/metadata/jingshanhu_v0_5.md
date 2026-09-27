@@ -63,3 +63,13 @@ Overpass 原始响应：`data/raw/osm-jingshanhu-golf.json`。
 ## 当前可用性与风险
 
 V0.5 仍不能用于真实 GPS 自动洞号识别或到果岭距离计算。最大风险是把 OSM 未编号 Green/Tee 与逐洞表的 1-18 洞进行错误关联；在取得带洞号的公开球道图、官方授权图或现场采样前，不应填入洞级坐标或标记 verified。
+
+## 2023 正射影像到手后的候选配准阶段（Thread 03C）
+
+2023 正射影像已按实际文件内容核验并通过预处理：5852 × 6063、四波段 UInt8、约 0.257571 m/pixel，源 CRS 为 EPSG:4548（CGCS2000 / 3-degree Gauss-Kruger CM 117E），运行时仍统一使用 EPSG:4326/WGS84。GeoTIFF、PRJ、TFW 的一致性和 TFW 半像元语义记录在 [`jingshanhu_orthophoto_2023.md`](./jingshanhu_orthophoto_2023.md)。
+
+本阶段不要求不熟悉球场的用户凭经验给 18 个对象编号，而是生成可审查的未编号空间对象和 Hole 候选：26 个 Green、2 个 Tee、55 个 Bunker、12 个 Water、23 个 Cartpath、14 个 Rough，以及 52 条 Tee→Green 直线长度比较 proxy。结果保存在 `data/derived/jingshanhu/spatial-candidates.json`；`Gxx/Txx/Cxx` 等 ID 只是空间对象 ID，不代表洞号。
+
+18 洞目前全部是 `candidate`；`unknown=0`、`high-confidence-inferred=0`、`field-confirmed=0`。每洞保留 bestCandidate、4 个 alternatives、长度/Par evidence、conflicts、来源和限制。分数只用于解释排序，且封顶 0.68；没有将任何候选写入正式 `course.geojson` 的 Tee、Green、centerline 或 Polygon。`Cxx` 明确不是实际球道 centerline，dogleg 只允许直线距离作为数量级检查。
+
+审查工作台和现场确认事件结构为下一次真实下场准备入口：用户可以查看候选、标记“待现场确认”和写备注，但点击候选不会自动成为 `field-confirmed`。现场确认需独立记录时间、预测洞号、实际洞号、WGS84 位置和 `field`/`familiar-player`/`official` 等来源。

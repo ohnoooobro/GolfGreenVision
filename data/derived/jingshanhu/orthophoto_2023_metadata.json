@@ -1,0 +1,333 @@
+{
+  "schemaVersion": 1,
+  "courseId": "jingshanhu",
+  "sourceDirectory": "data/raw/jingshanhu_orthophoto_2023/净山湖高尔夫球场2023",
+  "files": [
+    {
+      "name": "净山湖高尔夫球场2023.kml",
+      "relativePath": "净山湖高尔夫球场2023.kml",
+      "extension": ".kml",
+      "bytes": 764
+    },
+    {
+      "name": "净山湖高尔夫球场2023.prj",
+      "relativePath": "净山湖高尔夫球场2023.prj",
+      "extension": ".prj",
+      "bytes": 629
+    },
+    {
+      "name": "净山湖高尔夫球场2023.tfw",
+      "relativePath": "净山湖高尔夫球场2023.tfw",
+      "extension": ".tfw",
+      "bytes": 74
+    },
+    {
+      "name": "净山湖高尔夫球场2023.tif",
+      "relativePath": "净山湖高尔夫球场2023.tif",
+      "extension": ".tif",
+      "bytes": 144708423
+    },
+    {
+      "name": "净山湖高尔夫球场2023.txt",
+      "relativePath": "净山湖高尔夫球场2023.txt",
+      "extension": ".txt",
+      "bytes": 617
+    }
+  ],
+  "raster": {
+    "file": "净山湖高尔夫球场2023.tif",
+    "driver": "GTiff",
+    "width": 5852,
+    "height": 6063,
+    "bandCount": 4,
+    "dtypes": [
+      "uint8",
+      "uint8",
+      "uint8",
+      "uint8"
+    ],
+    "bitsPerSample": [
+      8,
+      8,
+      8,
+      8
+    ],
+    "colorInterpretation": [
+      "red",
+      "green",
+      "blue",
+      "alpha"
+    ],
+    "pixelSize": {
+      "x": 0.25757100823779566,
+      "y": 0.25757100823779566,
+      "unit": "metre"
+    },
+    "affineTransform": [
+      0.25757100823779566,
+      0.0,
+      450609.83013670344,
+      0.0,
+      -0.25757100823779566,
+      4450632.294997172
+    ],
+    "sourceCrs": {
+      "name": "CGCS2000 / 3-degree Gauss-Kruger CM 117E",
+      "wkt": "PROJCRS[\"CGCS2000 / 3-degree Gauss-Kruger CM 117E\",BASEGEOGCRS[\"China Geodetic Coordinate System 2000\",DATUM[\"China 2000\",ELLIPSOID[\"CGCS2000\",6378137,298.257222101,LENGTHUNIT[\"metre\",1]]],PRIMEM[\"Greenwich\",0,ANGLEUNIT[\"degree\",0.0174532925199433]],ID[\"EPSG\",4490]],CONVERSION[\"unnamed\",METHOD[\"Transverse Mercator\",ID[\"EPSG\",9807]],PARAMETER[\"Latitude of natural origin\",0,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8801]],PARAMETER[\"Longitude of natural origin\",117,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8802]],PARAMETER[\"Scale factor at natural origin\",1,SCALEUNIT[\"unity\",1],ID[\"EPSG\",8805]],PARAMETER[\"False easting\",500000,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8806]],PARAMETER[\"False northing\",0,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8807]]],CS[Cartesian,2],AXIS[\"northing\",north,ORDER[1],LENGTHUNIT[\"metre\",1]],AXIS[\"easting\",east,ORDER[2],LENGTHUNIT[\"metre\",1]],ID[\"EPSG\",4548]]",
+      "epsg": 4548,
+      "axisOrderNote": "Affine x/y are easting/northing; pyproj Transformer uses always_xy=True."
+    },
+    "prj": {
+      "file": "净山湖高尔夫球场2023.prj",
+      "epsg": 4548,
+      "matchesRasterAuthority": true,
+      "normalizedEqualsIgnoringAxisOrder": true,
+      "sameGeodeticBaseAndProjection": true,
+      "isBoundCrs": true,
+      "boundTransformation": "Transformation from China Geodetic Coordinate System 2000 to WGS84",
+      "wktNote": "The PRJ wraps projected EPSG:4548 in a BoundCRS with a zero-valued CGCS2000-to-WGS84 transformation; its projected source CRS is compared to the GeoTIFF CRS."
+    },
+    "worldFile": {
+      "file": "净山湖高尔夫球场2023.tfw",
+      "parameterOrder": [
+        "A",
+        "D",
+        "B",
+        "E",
+        "C",
+        "F"
+      ],
+      "values": [
+        0.2575710082,
+        0.0,
+        0.0,
+        -0.2575710082,
+        450609.8301367034,
+        4450632.294997172
+      ],
+      "tfwCAndF": {
+        "sourceX": 450609.8301367034,
+        "sourceY": 4450632.294997172
+      },
+      "rasterUpperLeftCorner": {
+        "sourceX": 450609.83013670344,
+        "sourceY": 4450632.294997172
+      },
+      "rasterFirstPixelCenter": {
+        "sourceX": 450609.9589222076,
+        "sourceY": 4450632.166211668
+      },
+      "pixelSizeAndRotationMatch": true,
+      "tfwCAndFMatchGeoTiffCorner": true,
+      "standardWorldFilePixelCenterMatch": false,
+      "halfPixelOffsetMetres": 0.18213020655721396,
+      "comparisonTolerance": 1e-06,
+      "deltas": {
+        "pixelWidth": 3.779565549422159e-11,
+        "rowRotation": 0.0,
+        "columnRotation": 0.0,
+        "pixelHeight": -3.779565549422159e-11
+      },
+      "pixelCornerNote": "Standard TFW C/F identify the center of the upper-left pixel; this file's C/F match the GeoTIFF upper-left pixel corner instead."
+    },
+    "kmlReference": {
+      "file": "净山湖高尔夫球场2023.kml",
+      "bytes": 764,
+      "geometryType": "polygon-envelope",
+      "coordinateTypeMarker": "CGCS2000",
+      "inputCrsInterpretation": "EPSG:4490 (CGCS2000 geographic)",
+      "wgs84Bounds": {
+        "west": 116.42014104,
+        "south": 40.17462737,
+        "east": 116.43772277,
+        "north": 40.18860489
+      },
+      "holeNumbered": false,
+      "use": "Course-area envelope only; not a hole layout or control-point set."
+    },
+    "textSidecar": {
+      "file": "净山湖高尔夫球场2023.txt",
+      "bytes": 617,
+      "encoding": "GBK",
+      "text": "【图片信息】\r\n宽度：5852像素\r\n高度：6063像素\r\n波段数：4\r\n位深度：32\r\n比例尺：1:1107\r\n空间分辨率：0.257571米/像素\r\n\r\n【坐标信息】\r\n输出坐标系：CGCS2000 / 3-degree Gauss-Kruger CM 117E\r\n左上角坐标：450609.830136703444,4450632.294997172430\r\n右上角坐标：452117.135676911043,4450632.294997172430\r\n右下角坐标：452117.135676911043,4449070.641974226572\r\n左下角坐标：450609.830136703444,4449070.641974226572\r\n\r\n输出坐标系：WGS 84 经纬度坐标\r\n左上角坐标：116.420022032742,40.188604293853\r\n右上角坐标：116.437837262897,40.188604293853\r\n右下角坐标：116.437837262897,40.174628173955\r\n左下角坐标：116.420022032742,40.174628173955\r\n"
+    },
+    "projectedBounds": [
+      450609.83013670344,
+      4449070.641974227,
+      452117.13567691104,
+      4450632.294997172
+    ],
+    "wgs84CornerCoordinates": {
+      "upperLeft": [
+        116.42002203274177,
+        40.18860429385301
+      ],
+      "upperRight": [
+        116.43772117336506,
+        40.18869161080449
+      ],
+      "lowerRight": [
+        116.43783726289669,
+        40.174628173954964
+      ],
+      "lowerLeft": [
+        116.42014177599197,
+        40.17454090018704
+      ]
+    },
+    "wgs84Bounds": {
+      "west": 116.42002203274177,
+      "south": 40.17454090018704,
+      "east": 116.43783726289669,
+      "north": 40.18869161080449
+    },
+    "pixelCoordinateSemantics": "Continuous pixel-edge coordinates; the center of column c, row r is (c+0.5, r+0.5).",
+    "pixelCenterSamples": {
+      "upperLeftPixelCenter": {
+        "pixel": [
+          0.5,
+          0.5
+        ],
+        "source": [
+          450609.9589222076,
+          4450632.166211668
+        ],
+        "wgs84": [
+          116.42002355484688,
+          40.18860314165859
+        ],
+        "roundTripPixelError": 1.6298145055770874e-09,
+        "roundTripSourceErrorMetres": 4.0745362639427185e-10
+      },
+      "upperRightPixelCenter": {
+        "pixel": [
+          5851.5,
+          0.5
+        ],
+        "source": [
+          452117.0068914069,
+          4450632.166211668
+        ],
+        "wgs84": [
+          116.43771967070873,
+          40.18869044368564
+        ],
+        "roundTripPixelError": 3.790208277315764e-09,
+        "roundTripSourceErrorMetres": 9.47552069328941e-10
+      },
+      "lowerRightPixelCenter": {
+        "pixel": [
+          5851.5,
+          6062.5
+        ],
+        "source": [
+          452117.0068914069,
+          4449070.770759731
+        ],
+        "wgs84": [
+          116.43783574140525,
+          40.1746293263906
+        ],
+        "roundTripPixelError": 3.839941346661803e-09,
+        "roundTripSourceErrorMetres": 9.599853366654507e-10
+      },
+      "lowerLeftPixelCenter": {
+        "pixel": [
+          0.5,
+          6062.5
+        ],
+        "source": [
+          450609.9589222076,
+          4449070.770759731
+        ],
+        "wgs84": [
+          116.4201432780351,
+          40.17454206753261
+        ],
+        "roundTripPixelError": 1.862645149230957e-09,
+        "roundTripSourceErrorMetres": 5.238689482212067e-10
+      },
+      "imageCenter": {
+        "pixel": [
+          2926.0,
+          3031.5
+        ],
+        "source": [
+          451363.4829068072,
+          4449851.4684857
+        ],
+        "wgs84": [
+          116.42893056195814,
+          40.181616587146785
+        ],
+        "roundTripPixelError": 3.790208277315764e-09,
+        "roundTripSourceErrorMetres": 1.7462298274040222e-10
+      }
+    },
+    "wgs84Transformation": {
+      "target": "EPSG:4326",
+      "library": "pyproj",
+      "alwaysXY": true,
+      "description": "Inverse of Gauss-Kruger CM 117E + Ballpark geographic offset from China Geodetic Coordinate System 2000 to WGS 84 (with axis order normalized for visualization)",
+      "definition": "proj=pipeline step inv proj=tmerc lat_0=0 lon_0=117 k=1 x_0=500000 y_0=0 ellps=GRS80 step proj=unitconvert xy_in=rad xy_out=deg",
+      "accuracyMetres": -1.0
+    },
+    "alphaAndNoData": {
+      "present": true,
+      "band": 4,
+      "min": 0,
+      "max": 255,
+      "transparentPixels": 448447,
+      "partialAlphaPixels": 0,
+      "opaquePixels": 35032229,
+      "nodata": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "maskFlags": [
+        [
+          "per_dataset",
+          "alpha"
+        ],
+        [
+          "per_dataset",
+          "alpha"
+        ],
+        [
+          "per_dataset",
+          "alpha"
+        ],
+        [
+          "all_valid"
+        ]
+      ]
+    },
+    "preview": {
+      "file": "orthophoto_2023_preview.jpg",
+      "width": 5852,
+      "height": 6063,
+      "format": "JPEG",
+      "quality": 91,
+      "backgroundForTransparentPixels": "#fafaf7",
+      "gitIgnored": true
+    },
+    "smallPreview": {
+      "file": "orthophoto_2023_preview_small.jpg",
+      "maxDimension": 1024,
+      "format": "JPEG",
+      "gitIgnored": false,
+      "use": "审查工作台的轻量预览；不用于测量或坐标反演。"
+    }
+  },
+  "validation": {
+    "embeddedCrsPresent": true,
+    "worldFilePixelSizeAndRotationMatch": true,
+    "worldFileMatchesGeoTiffCorner": true,
+    "worldFileUsesStandardPixelCenterSemantics": false,
+    "rasterAndPrjEpsgMatch": true,
+    "pixelToSourceToWgs84AndBackPassed": true,
+    "allWgs84CoordinatesInRange": true
+  }
+}
