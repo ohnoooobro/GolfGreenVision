@@ -1,6 +1,7 @@
 import type { FieldDeviceInfo, FieldSession, FieldTestState } from './types'
 
 export const FIELD_APP_VERSION = '1.0.0'
+export const FIELD_BUILD_ID = import.meta.env.VITE_BUILD_ID || import.meta.env.VITE_GIT_COMMIT || `local-${FIELD_APP_VERSION}`
 export const FIELD_DATA_VERSION = 'jingshanhu-v0.5'
 export const FIELD_CANDIDATE_DATASET_VERSION = 'spatial-candidates-schema-2'
 
@@ -34,6 +35,7 @@ export function createFieldSession(options: CreateSessionOptions = {}): FieldSes
     locationMode: options.locationMode ?? 'real',
     courseId: 'jingshanhu',
     appVersion: FIELD_APP_VERSION,
+    buildId: FIELD_BUILD_ID,
     dataVersion: FIELD_DATA_VERSION,
     candidateDatasetVersion: FIELD_CANDIDATE_DATASET_VERSION,
     device: options.device ?? deviceInfo(),

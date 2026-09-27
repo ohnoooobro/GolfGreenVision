@@ -1,4 +1,4 @@
-import { FIELD_APP_VERSION, FIELD_CANDIDATE_DATASET_VERSION, FIELD_DATA_VERSION } from './session'
+import { FIELD_APP_VERSION, FIELD_BUILD_ID, FIELD_CANDIDATE_DATASET_VERSION, FIELD_DATA_VERSION } from './session'
 import type { FieldExportDocument, FieldTestState } from './types'
 
 export function createFieldExportDocument(state: FieldTestState, generatedAt = new Date()): FieldExportDocument {
@@ -11,7 +11,10 @@ export function createFieldExportDocument(state: FieldTestState, generatedAt = n
     track: state.trackPoints,
     metadata: {
       generatedAt: generatedAt.toISOString(),
+      exportedAt: generatedAt.toISOString(),
       appVersion: FIELD_APP_VERSION,
+      buildId: FIELD_BUILD_ID,
+      courseId: state.session.courseId,
       dataVersion: FIELD_DATA_VERSION,
       candidateDatasetVersion: FIELD_CANDIDATE_DATASET_VERSION,
       locationMode: state.session.locationMode ?? 'real',

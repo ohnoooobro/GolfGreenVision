@@ -29,6 +29,10 @@ const CANDIDATES: Record<number, Omit<FieldCandidateMapping, 'scoreMeaning'>> = 
   17: { status: 'candidate', score: 0.74, teeZoneId: 'TZ02', greenId: 'G19', corridorId: 'TC045' },
 }
 
+export function isFieldCandidateDatasetLoaded(): boolean {
+  return Object.keys(CANDIDATES).length > 0
+}
+
 export function getFieldCandidateMapping(hole: number | null): FieldCandidateMapping | null {
   if (hole === null || !Number.isInteger(hole) || hole < 1 || hole > 18) return null
   const candidate = CANDIDATES[hole]

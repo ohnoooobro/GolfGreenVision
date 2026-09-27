@@ -48,6 +48,7 @@ export interface FieldSession {
   locationMode: 'real' | 'simulated'
   courseId: 'jingshanhu'
   appVersion: string
+  buildId: string
   dataVersion: string
   candidateDatasetVersion: string
   device: FieldDeviceInfo
@@ -76,7 +77,10 @@ export interface FieldExportDocument {
   track: FieldTrackPoint[]
   metadata: {
     generatedAt: string
+    exportedAt: string
     appVersion: string
+    buildId: string
+    courseId: 'jingshanhu'
     dataVersion: string
     candidateDatasetVersion: string
     locationMode: 'real' | 'simulated'

@@ -45,7 +45,12 @@ export function validateFieldExportDocument(value: unknown): string[] {
   if (!Array.isArray(document.track)) issues.push('track 必须是数组。')
   else document.track.forEach((point, index) => { if (!validTrackPoint(point)) issues.push(`track[${index}] 结构无效。`) })
   if (!document.metadata || typeof document.metadata !== 'object') issues.push('缺少 metadata。')
-  else if (!['real', 'simulated'].includes(document.metadata.locationMode)) issues.push('metadata.locationMode 无效。')
+  else {
+    if (!['real', 'simulated'].includes(document.metadata.locationMode)) issues.push('metadata.locationMode 无效。')
+    if (document.metadata.courseId !== 'jingshanhu') issues.push('metadata.courseId 必须为 jingshanhu。')
+    if (typeof document.metadata.appVersion !== 'string' || typeof document.metadata.buildId !== 'string') issues.push('metadata 版本信息无效。')
+    if (typeof document.metadata.exportedAt !== 'string' || Number.isNaN(Date.parse(document.metadata.exportedAt))) issues.push('metadata.exportedAt 无效。')
+  }
   return issues
 }
 

@@ -3,7 +3,7 @@ import { createFieldConfirmationEvent, createHoleSelectionState, inferHole, jing
 import type { GolfCourseGeoJSON } from './course'
 import { useLocation } from './location/useLocation'
 import type { LocationStatus } from './location/types'
-import { checkFieldReadiness, createEmptyFieldTestState, createFieldSample, createFieldSession, createFieldTrackPoint, downloadFieldExport, endFieldSession, getFieldCandidateMapping, isFieldStateRecoverable, loadFieldTestState, saveFieldTestState, shouldRecordTrackPoint, undoLastFieldSample, updateFieldSessionStats } from './field'
+import { checkFieldReadiness, clearFieldTestState, createEmptyFieldTestState, createFieldSample, createFieldSession, createFieldTrackPoint, downloadFieldExport, endFieldSession, getFieldCandidateMapping, isFieldCandidateDatasetLoaded, isFieldStateRecoverable, loadFieldTestState, saveFieldTestState, shouldRecordTrackPoint, undoLastFieldSample, updateFieldSessionStats } from './field'
 import type { FieldTestState } from './field'
 
 const STATUS_LABELS: Record<LocationStatus, string> = { waiting: '等待定位', success: '定位成功', 'permission-denied': '权限被拒绝', unavailable: '定位不可用', error: '定位错误' }
@@ -33,14 +33,29 @@ export default function App() {
   const [showSamples, setShowSamples] = useState(false)
   const [confirmationMode, setConfirmationMode] = useState<'other' | null>(null)
   const [confirmationHole, setConfirmationHole] = useState(1)
+  const [geolocationPermission, setGeolocationPermission] = useState<'granted' | 'prompt' | 'denied' | 'unknown' | 'unsupported'>('unknown')
   const lastTrackPoint = useRef(fieldData.trackPoints.at(-1) ?? null)
   const activeSession = fieldData.session?.endTime === null && fieldData.session !== null
   const quality = formatQuality(location?.accuracy, state.status)
   const currentCandidate = getFieldCandidateMapping(actualHole)
   const currentHoleSamples = fieldData.samples.filter((sample) => sample.actualHole === actualHole)
-  const readiness = useMemo(() => checkFieldReadiness({ locationState: state, candidateDatasetLoaded: true }), [state])
+  const readiness = useMemo(() => checkFieldReadiness({ locationState: state, candidateDatasetLoaded: isFieldCandidateDatasetLoaded(), geolocationPermission }), [geolocationPermission, state])
 
-  useEffect(() => { saveFieldTestState(fieldData) }, [fieldData])
+  useEffect(() => {
+    const hasFieldData = fieldData.session !== null || fieldData.currentActualHole !== null || fieldData.samples.length > 0 || fieldData.confirmationEvents.length > 0 || fieldData.trackPoints.length > 0
+    if (hasFieldData) saveFieldTestState(fieldData)
+    else clearFieldTestState()
+  }, [fieldData])
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.permissions?.query) { setGeolocationPermission('unsupported'); return }
+    let disposed = false
+    navigator.permissions.query({ name: 'geolocation' }).then((permission) => {
+      if (disposed) return
+      setGeolocationPermission(permission.state)
+      permission.addEventListener?.('change', () => setGeolocationPermission(permission.state))
+    }).catch(() => { if (!disposed) setGeolocationPermission('unknown') })
+    return () => { disposed = true }
+  }, [])
   useEffect(() => { setHoleSelection((current) => updateInferredHole(current, holeInference.inferredHole)) }, [holeInference.inferredHole])
   useEffect(() => {
     if (!activeSession || !location || state.status !== 'success' || !fieldData.session) return
@@ -60,8 +75,9 @@ export default function App() {
   function changeActualHole(next: number | null) { setActualHole(next); setFieldData((current) => current.currentActualHole === next ? current : { ...current, currentActualHole: next }) }
   function startSession() { const session = createFieldSession({ notes: sessionNotes, locationMode: state.mode }); setFieldData({ ...createEmptyFieldTestState(), session }); setActualHole(null); setNotice('现场测试已开始。请先选择当前实际 Hole，再记录 Tee 或 Green。'); lastTrackPoint.current = null }
   function restoreSession() { const recovered = loadFieldTestState(); setFieldData(recovered); setActualHole(recovered.currentActualHole); lastTrackPoint.current = recovered.trackPoints.at(-1) ?? null; setNotice('已恢复未完成测试。实际 Hole 仍由你确认。') }
-  function stopAndExport() { if (!fieldData.session) return; const session = endFieldSession(fieldData.session, fieldData.samples, fieldData.trackPoints); const next = { ...fieldData, session }; setFieldData(next); downloadFieldExport(next); setNotice('测试已结束，JSON 已导出。') }
-  function exportCurrent() { if (!fieldData.session) { setNotice('还没有可导出的现场测试。'); return }; downloadFieldExport(fieldData); setNotice('现场 JSON 已导出。') }
+  function stopSession() { if (!fieldData.session) return; const session = endFieldSession(fieldData.session, fieldData.samples, fieldData.trackPoints); setFieldData((current) => ({ ...current, session })); setNotice('测试已结束，数据仍保存在本机。请导出 JSON，确认文件已保存后再清除。') }
+  function exportCurrent() { if (!fieldData.session) { setNotice('还没有可导出的现场测试。'); return }; downloadFieldExport(fieldData); setNotice('现场 JSON 已导出。请在手机“文件”或分享界面确认文件仍然存在。') }
+  function clearSession() { clearFieldTestState(); setFieldData(createEmptyFieldTestState()); setActualHole(null); lastTrackPoint.current = null; setNotice('本机现场数据已清除。') }
   function recordSample(sampleType: 'tee' | 'green') {
     if (!activeSession || !fieldData.session) { setNotice('请先点击“开始现场测试”。'); return }
     if (actualHole === null) { setNotice('请先选择当前实际 Hole，才能保存 Tee / Green。'); return }
@@ -99,7 +115,7 @@ export default function App() {
       <section className="confirmation-panel" aria-labelledby="confirmation-title"><h3 id="confirmation-title">系统判断</h3><div className="confirmation-actions"><button type="button" onClick={() => recordConfirmation(holeInference.inferredHole ?? 'uncertain')} disabled={holeInference.inferredHole === null}>正确</button><button type="button" onClick={() => setConfirmationMode('other')}>实际是其他洞</button><button type="button" onClick={() => recordConfirmation('uncertain')}>暂不确定</button></div>{actualHole !== null && holeInference.inferredHole !== null && <button type="button" className="quick-confirm" onClick={() => recordConfirmation(actualHole)}>用当前实际 Hole 校验系统预测</button>}{confirmationMode === 'other' && <div className="confirmation-select"><label>实际洞号<select aria-label="确认实际洞号" value={confirmationHole} onChange={(event) => setConfirmationHole(Number(event.target.value))}>{Array.from({ length: 18 }, (_, index) => index + 1).map((hole) => <option key={hole} value={hole}>Hole {hole}</option>)}</select></label><button type="button" onClick={() => recordConfirmation(confirmationHole)}>保存确认</button></div>}</section>
       <div className="sample-summary"><span>本轮 Tee {fieldData.session?.sampleCounts.tee ?? 0}</span><span>Green {fieldData.session?.sampleCounts.green ?? 0}</span><span>轨迹点 {fieldData.trackPoints.length}</span><span>确认 {fieldData.confirmationEvents.length}</span></div><div className="field-toolbar"><button type="button" className="secondary-action" onClick={undoSample}>撤销上一条采样</button><button type="button" className="secondary-action" onClick={() => setShowSamples((value) => !value)}>{showSamples ? '收起本洞样本' : '查看本洞样本'}</button></div>
       {showSamples && <div className="sample-list">{currentHoleSamples.length === 0 ? <p>当前 Hole 暂无采样。</p> : currentHoleSamples.map((sample) => <div className="sample-row" key={sample.id}><span>{sample.sampleType === 'tee' ? 'Tee' : 'Green'} · {new Date(sample.timestamp).toLocaleTimeString('zh-CN')} · ±{sample.accuracy.toFixed(1)}m</span><button type="button" aria-label={`删除${sample.sampleType === 'tee' ? ' Tee' : ' Green'}采样`} onClick={() => deleteSample(sample.id)}>删除</button></div>)}</div>}
-      {fieldData.session && <div className="session-actions"><button type="button" className="secondary-action" onClick={exportCurrent}>导出现场数据</button>{activeSession && <button type="button" className="primary-action" onClick={stopAndExport}>结束并导出</button>}</div>}
+      {fieldData.session && <><p className="session-retention-note">结束后数据仍保存在本机；请确认 JSON 已保存到“文件”或已分享，再手动清除 Session。</p><div className="session-actions"><button type="button" className="secondary-action" onClick={exportCurrent}>导出现场数据</button>{activeSession ? <button type="button" className="primary-action" onClick={stopSession}>结束现场测试</button> : <button type="button" className="danger-action" onClick={clearSession}>确认已保存后清除</button>}</div></>}
     </section>
     <details className="readiness-panel" open={showReadiness} onToggle={(event) => setShowReadiness((event.currentTarget as HTMLDetailsElement).open)}><summary>测试准备检查</summary><div className="readiness-list">{readiness.map((check) => <div className={check.ok ? 'readiness-item ok' : 'readiness-item'} key={check.key}><span aria-hidden="true">{check.ok ? '✓' : '!'}</span><span><strong>{check.label}</strong><small>{check.detail}</small></span></div>)}</div><p className="readiness-result">{readiness.every((check) => check.ok) ? '准备完成' : '请先处理标记为 ! 的项目；定位权限和 GPS 返回可能需要在现场等待。'}</p></details>
     {state.mode === 'simulated' && <><form className="simulation-panel" onSubmit={applySimulation}><h2>桌面模拟定位</h2><p>修改经纬度或 accuracy 后点击应用，页面会使用统一定位接口更新位置。</p><div className="simulation-fields"><label>纬度<input aria-label="模拟纬度" inputMode="decimal" value={latitude} onChange={(event) => setLatitude(event.target.value)} /></label><label>经度<input aria-label="模拟经度" inputMode="decimal" value={longitude} onChange={(event) => setLongitude(event.target.value)} /></label><label>accuracy（米）<input aria-label="模拟 accuracy" inputMode="decimal" value={simulationAccuracy} onChange={(event) => setSimulationAccuracy(event.target.value)} /></label></div><button className="apply-button" type="submit">应用模拟位置</button>{simulationError && <p className="error-message">{simulationError}</p>}</form><section className="hole-debug-panel" aria-labelledby="hole-debug-title"><div className="hole-debug-heading"><div><p className="panel-eyebrow">Mock / Demo</p><h2 id="hole-debug-title">洞号识别调试</h2></div><span className="demo-badge">{activeCourse.properties.demo ? '模拟球场' : '真实资料 V0.5'}</span></div><label className="correction-field"><span>调试球场</span><select aria-label="调试球场" value={activeCourse.properties.id} onChange={(event) => selectCourse(event.target.value === jingshanhuV0Course.properties.id ? jingshanhuV0Course : mockDemoCourse)}><option value={mockDemoCourse.properties.id}>Mock / Demo（3 洞）</option><option value={jingshanhuV0Course.properties.id}>净山湖 V0.5（18 洞，空间待配准）</option></select></label><dl className="hole-debug-grid"><div><dt>自动判断洞号</dt><dd>{holeInference.inferredHole === null ? '无法确定' : `${holeInference.inferredHole} 洞`}</dd></div><div><dt>当前实际使用洞号</dt><dd>{holeSelection.effectiveHole === null ? '无法确定' : `${holeSelection.effectiveHole} 洞`}</dd></div><div><dt>候选洞号</dt><dd>{holeInference.candidates.length ? holeInference.candidates.map((hole) => `${hole} 洞`).join('、') : '无'}</dd></div></dl><label className="correction-field"><span>手动修正洞号</span><select aria-label="手动修正洞号" value={holeSelection.correctedHole ?? ''} onChange={(event) => setHoleSelection((current) => setCorrectedHole(current, event.target.value ? Number(event.target.value) : null, activeCourse.features.map((feature) => feature.properties.hole)))}><option value="">不修正（使用自动判断）</option>{activeCourse.features.map((feature) => <option key={feature.properties.hole} value={feature.properties.hole}>{feature.properties.hole} 洞</option>)}</select></label>{!activeCourse.properties.demo && <p className="hole-hint">净山湖 V0.5 当前有 {activeCourse.features.length} 洞的 Par/距离表；Tee、Green 与 centerline 尚未取得可复核坐标，因此自动洞号暂不可用。</p>}{holeInference.reason === 'outside' && <p className="hole-hint">当前点位不在任何模拟球洞区域内，无法确定洞号。</p>}{holeInference.reason === 'multiple-match' && <p className="hole-hint">当前位置命中多个相邻区域，按最小洞号规则暂定为 {holeInference.inferredHole} 洞。</p>}{holeSelection.correctedHole !== null && <p className="hole-hint">已使用手动修正：界面当前显示 {holeSelection.effectiveHole} 洞。</p>}</section></>}

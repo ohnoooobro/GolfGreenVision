@@ -3,6 +3,7 @@ import { createFieldConfirmationEvent } from '../src/course/fieldConfirmation'
 import {
   FIELD_STORAGE_KEY,
   clearFieldTestState,
+  checkFieldReadiness,
   createEmptyFieldTestState,
   createFieldExportDocument,
   createFieldSample,
@@ -14,6 +15,7 @@ import {
   getFieldCandidateMapping,
   isFieldStateRecoverable,
   isValidFieldExportDocument,
+  isStorageAvailable,
   loadFieldTestState,
   saveFieldTestState,
   serializeFieldExport,
@@ -210,9 +212,12 @@ describe('现场状态持久化与导出', () => {
 
     expect(document.metadata).toMatchObject({
       generatedAt: '2026-09-27T08:00:01.234Z',
+      exportedAt: '2026-09-27T08:00:01.234Z',
+      courseId: 'jingshanhu',
       locationMode: 'real',
       exportSource: 'browser-local-storage',
     })
+    expect(document.metadata.buildId).toBeTruthy()
     expect(document.track).toEqual([])
     expect(isValidFieldExportDocument(document)).toBe(true)
     expect(JSON.parse(serializeFieldExport(state, new Date(BASE_TIME + 1234)))).toEqual(document)
@@ -226,6 +231,13 @@ describe('现场状态持久化与导出', () => {
     expect(() => createFieldExportDocument({ ...state, session: null })).toThrow('没有可导出的现场测试 Session')
   })
 
+  it('候选数据缺失时仍可创建现场采样，导出不会自动清除 Session', () => {
+    const session = createFieldSession({ now: new Date(BASE_TIME) })
+    const state: FieldTestState = { ...createEmptyFieldTestState(), session, samples: [createFieldSample({ ...sampleInput(session.sessionId, 'tee', 1), candidateMapping: null })] }
+    expect(state.samples).toHaveLength(1)
+    expect(createFieldExportDocument(state).session.sessionId).toBe(session.sessionId)
+  })
+
   it('未结束 Session 可恢复，结束后不再标记为可恢复', () => {
     const session = createFieldSession({ now: new Date(BASE_TIME) })
     const active: FieldTestState = { ...createEmptyFieldTestState(), session }
@@ -233,5 +245,24 @@ describe('现场状态持久化与导出', () => {
     const ended: FieldTestState = { ...active, session: endFieldSession(session, [], [], new Date(BASE_TIME + 1_000)) }
     expect(isFieldStateRecoverable(ended)).toBe(false)
     expect(isFieldStateRecoverable(createEmptyFieldTestState())).toBe(false)
+  })
+})
+
+describe('现场出发前检查', () => {
+  it('能够识别 localStorage 写入失败和权限拒绝', () => {
+    const blockedStorage: StorageLike = { getItem: () => null, setItem: () => { throw new Error('blocked') }, removeItem: () => undefined }
+    expect(isStorageAvailable(blockedStorage)).toBe(false)
+    const checks = checkFieldReadiness({ storage: blockedStorage, geolocationPermission: 'denied', candidateDatasetLoaded: false, locationState: { mode: 'real', status: 'waiting', location: null, errorMessage: null } })
+    expect(checks.find((check) => check.key === 'permission')).toMatchObject({ ok: false })
+    expect(checks.find((check) => check.key === 'storage')).toMatchObject({ ok: false })
+    expect(checks.find((check) => check.key === 'candidate')).toMatchObject({ ok: false })
+  })
+
+  it('安全上下文失败时明确提示手机定位可能不可用', () => {
+    const original = window.isSecureContext
+    Object.defineProperty(window, 'isSecureContext', { configurable: true, value: false })
+    const check = checkFieldReadiness({ storage: memoryStorage() }).find((item) => item.key === 'secure-context')
+    expect(check).toMatchObject({ ok: false, detail: '当前页面不是安全连接，手机定位可能不可用。' })
+    Object.defineProperty(window, 'isSecureContext', { configurable: true, value: original })
   })
 })

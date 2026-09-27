@@ -1,4 +1,4 @@
-import { createEmptyFieldTestState } from './session'
+import { createEmptyFieldTestState, FIELD_BUILD_ID } from './session'
 import type { FieldTestState } from './types'
 
 export const FIELD_STORAGE_KEY = 'golf-green-vision.field-test.v1'
@@ -10,8 +10,14 @@ export interface StorageLike {
 }
 
 function defaultStorage(): StorageLike | null {
-  if (typeof window === 'undefined' || !window.localStorage) return null
-  return window.localStorage
+  if (typeof window === 'undefined') return null
+  try { return window.localStorage ?? null } catch { return null }
+}
+
+export function isStorageAvailable(storage: StorageLike | null = defaultStorage()): boolean {
+  if (!storage) return false
+  const probeKey = `${FIELD_STORAGE_KEY}.probe`
+  try { storage.setItem(probeKey, '1'); storage.removeItem(probeKey); return true } catch { return false }
 }
 
 export function saveFieldTestState(state: FieldTestState, storage: StorageLike | null = defaultStorage()): boolean {
@@ -37,7 +43,7 @@ export function loadFieldTestState(storage: StorageLike | null = defaultStorage(
       ? (value.currentActualHole === null || (typeof value.currentActualHole === 'number' && Number.isInteger(value.currentActualHole) && value.currentActualHole >= 1 && value.currentActualHole <= 18) ? value.currentActualHole : null)
       : (samples.at(-1)?.actualHole ?? null)
     const session = value.session && typeof value.session === 'object'
-      ? { ...value.session, locationMode: value.session.locationMode === 'simulated' ? 'simulated' as const : 'real' as const }
+      ? { ...value.session, buildId: typeof value.session.buildId === 'string' ? value.session.buildId : FIELD_BUILD_ID, locationMode: value.session.locationMode === 'simulated' ? 'simulated' as const : 'real' as const }
       : null
     return {
       session,

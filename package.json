@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "preview": "vite preview",
     "test": "vitest run",
     "validate:data": "vitest run tests/data-validation.test.ts",
     "test:watch": "vitest"
