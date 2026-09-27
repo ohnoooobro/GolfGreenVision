@@ -59,6 +59,8 @@ export interface HoleSpatialCandidate {
   conflicts: string[]
   fieldConfirmed: boolean
   mappingIndependentEvidence: boolean
+  /** Explicitly named, mutually independent evidence sources; free text alone is insufficient. */
+  independentEvidenceSources?: string[]
   spatialVerified: boolean
   spatialEstimated: boolean
   limitations: string[]
@@ -139,7 +141,9 @@ function validMatch(match: HoleCandidateMatch | null, corridorById: Map<string, 
 /** Validate the independent candidate layer without promoting it to runtime hole geometry. */
 export function validateSpatialCandidates(document: SpatialCandidatesDocument): SpatialValidationIssue[] {
   const issues: SpatialValidationIssue[] = []
-  if (document.schemaVersion !== 1) issues.push({ code: 'invalid-candidate-schema', message: '空间候选 schemaVersion 必须为 1。' })
+  if (document.schemaVersion !== 1 && document.schemaVersion !== 2) {
+    issues.push({ code: 'invalid-candidate-schema', message: '空间候选 schemaVersion 必须为 1 或 2。' })
+  }
   if (!document.coordinateSystem.includes('WGS84')) issues.push({ code: 'invalid-candidate-crs', message: '空间候选运行时坐标系必须声明 WGS84。' })
   const imageWidth = document.orthophoto?.width
   const imageHeight = document.orthophoto?.height
@@ -180,6 +184,12 @@ export function validateSpatialCandidates(document: SpatialCandidatesDocument): 
     if (hole.status === 'high-confidence-inferred' && !hasText(hole.evidence)) issues.push({ code: 'missing-candidate-evidence', hole: hole.hole, message: `high-confidence-inferred 洞必须有 evidence。` })
     if (hole.status === 'high-confidence-inferred' && hole.mappingIndependentEvidence !== true) {
       issues.push({ code: 'missing-independent-evidence', hole: hole.hole, message: `洞 ${hole.hole} 只有在 mappingIndependentEvidence=true 时才能进入 high-confidence-inferred；当前应保持 candidate。` })
+    }
+    if (hole.independentEvidenceSources !== undefined && (!Array.isArray(hole.independentEvidenceSources) || hole.independentEvidenceSources.some((source) => typeof source !== 'string' || source.trim().length === 0))) {
+      issues.push({ code: 'invalid-independent-evidence', hole: hole.hole, message: `洞 ${hole.hole} 的 independentEvidenceSources 必须是非空字符串数组。` })
+    }
+    if (hole.mappingIndependentEvidence === true && (hole.independentEvidenceSources?.length ?? 0) < 2) {
+      issues.push({ code: 'insufficient-independent-evidence', hole: hole.hole, message: `洞 ${hole.hole} 声明独立证据时必须列出至少两个独立来源。` })
     }
     if (hole.fieldConfirmed && hole.status !== 'field-confirmed') issues.push({ code: 'confirmation-status-mismatch', hole: hole.hole, message: `fieldConfirmed=true 时状态必须为 field-confirmed。` })
     if (hole.status === 'field-confirmed' && (!hole.fieldConfirmed || !hole.mappingIndependentEvidence)) issues.push({ code: 'missing-confirmation-source', hole: hole.hole, message: `field-confirmed 洞必须包含独立确认标记。` })

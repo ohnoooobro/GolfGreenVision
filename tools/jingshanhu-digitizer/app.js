@@ -3,296 +3,160 @@ const METADATA_URL = '../../data/derived/jingshanhu/orthophoto_2023_metadata.jso
 const PREVIEW_URL = '../../data/derived/jingshanhu/orthophoto_2023_preview_small.jpg'
 const REVIEW_STORAGE_KEY = 'jingshanhu-digitizer-review-v1'
 const EVENTS_STORAGE_KEY = 'jingshanhu-field-confirmation-events-v1'
+const HOLE_NUMBERS = Array.from({ length: 18 }, (_, index) => index + 1)
+const STATUS_LABELS = { unknown: 'unknown', candidate: 'candidate', 'high-confidence-inferred': 'high-confidence-inferred', 'field-confirmed': 'field-confirmed' }
+const GREEN_CLASS_LABELS = { 'main-18': '正式 18 洞', 'official-18': '正式 18 洞', main: '正式主球场', practice: '练习区', putting: '练习果岭', chipping: '切杆区', training: '训练区', 'non-course': '非主球场', excluded: '排除候选', unknown: 'unknown' }
 
 const state = {
-  document: null,
-  metadata: null,
-  image: null,
-  selectedHole: 1,
-  selectedCandidateIndex: 0,
-  view: { scale: 1, offsetX: 0, offsetY: 0, fitted: false },
-  dragging: false,
-  dragStart: null,
-  hitTargets: [],
-  review: loadJson(REVIEW_STORAGE_KEY, {}),
-  events: loadJson(EVENTS_STORAGE_KEY, []),
+  document: null, metadata: null, image: null, selectedHole: 1, selectedSolutionId: null, selectedCandidateIndex: 0,
+  view: { scale: 1, offsetX: 0, offsetY: 0, fitted: false }, dragging: false, dragStart: null, hitTargets: [],
+  layers: { corridors: true, teeZones: true, greens: true, context: true }, review: loadJson(REVIEW_STORAGE_KEY, {}), events: loadJson(EVENTS_STORAGE_KEY, []),
 }
 
 const elements = {
-  canvas: document.querySelector('#mapCanvas'),
-  mapLoading: document.querySelector('#mapLoading'),
-  mapReadout: document.querySelector('#mapReadout'),
-  datasetMeta: document.querySelector('#datasetMeta'),
-  loadError: document.querySelector('#loadError'),
-  holeSelect: document.querySelector('#holeSelect'),
-  holeStatus: document.querySelector('#holeStatus'),
-  holeSummary: document.querySelector('#holeSummary'),
-  candidateTitle: document.querySelector('#candidateTitle'),
-  candidateScore: document.querySelector('#candidateScore'),
-  candidateSummary: document.querySelector('#candidateSummary'),
-  candidateLinks: document.querySelector('#candidateLinks'),
-  alternativeList: document.querySelector('#alternativeList'),
-  evidenceList: document.querySelector('#evidenceList'),
-  conflictList: document.querySelector('#conflictList'),
-  coordinateGrid: document.querySelector('#coordinateGrid'),
-  pendingBadge: document.querySelector('#pendingBadge'),
-  pendingButton: document.querySelector('#pendingButton'),
-  reviewNote: document.querySelector('#reviewNote'),
-  saveNoteButton: document.querySelector('#saveNoteButton'),
-  reviewSaved: document.querySelector('#reviewSaved'),
-  eventLatitude: document.querySelector('#eventLatitude'),
-  eventLongitude: document.querySelector('#eventLongitude'),
-  capturePositionButton: document.querySelector('#capturePositionButton'),
-  notThisHoleChoice: document.querySelector('#notThisHoleChoice'),
-  actualHoleSelect: document.querySelector('#actualHoleSelect'),
-  saveNotThisHoleButton: document.querySelector('#saveNotThisHoleButton'),
-  eventSaved: document.querySelector('#eventSaved'),
+  canvas: document.querySelector('#mapCanvas'), mapLoading: document.querySelector('#mapLoading'), mapReadout: document.querySelector('#mapReadout'), datasetMeta: document.querySelector('#datasetMeta'), loadError: document.querySelector('#loadError'),
+  solutionSelect: document.querySelector('#solutionSelect'), solutionSourceBadge: document.querySelector('#solutionSourceBadge'), solutionSummary: document.querySelector('#solutionSummary'), solutionNote: document.querySelector('#solutionNote'),
+  mappingSummaryBadge: document.querySelector('#mappingSummaryBadge'), mappingTableWrap: document.querySelector('#mappingTableWrap'), greenClassificationBadge: document.querySelector('#greenClassificationBadge'), greenClassificationList: document.querySelector('#greenClassificationList'), teeZoneBadge: document.querySelector('#teeZoneBadge'), teeZoneList: document.querySelector('#teeZoneList'),
+  layerCorridors: document.querySelector('#layerCorridors'), layerTeeZones: document.querySelector('#layerTeeZones'), layerGreens: document.querySelector('#layerGreens'), layerContext: document.querySelector('#layerContext'),
+  holeSelect: document.querySelector('#holeSelect'), holeStatus: document.querySelector('#holeStatus'), holeSummary: document.querySelector('#holeSummary'), candidateTitle: document.querySelector('#candidateTitle'), candidateScore: document.querySelector('#candidateScore'), candidateSummary: document.querySelector('#candidateSummary'), candidateLinks: document.querySelector('#candidateLinks'), alternativeList: document.querySelector('#alternativeList'), evidenceList: document.querySelector('#evidenceList'), conflictList: document.querySelector('#conflictList'), transitionDetails: document.querySelector('#transitionDetails'), coordinateGrid: document.querySelector('#coordinateGrid'),
+  pendingBadge: document.querySelector('#pendingBadge'), pendingButton: document.querySelector('#pendingButton'), reviewNote: document.querySelector('#reviewNote'), saveNoteButton: document.querySelector('#saveNoteButton'), reviewSaved: document.querySelector('#reviewSaved'), eventLatitude: document.querySelector('#eventLatitude'), eventLongitude: document.querySelector('#eventLongitude'), capturePositionButton: document.querySelector('#capturePositionButton'), notThisHoleChoice: document.querySelector('#notThisHoleChoice'), actualHoleSelect: document.querySelector('#actualHoleSelect'), saveNotThisHoleButton: document.querySelector('#saveNotThisHoleButton'), eventSaved: document.querySelector('#eventSaved'),
 }
 
-function loadJson(key, fallback) {
-  try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback } catch { return fallback }
+function loadJson(key, fallback) { try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback } catch { return fallback } }
+function saveJson(key, value) { try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* storage may be disabled */ } }
+function asArray(value) { return Array.isArray(value) ? value : [] }
+function isObject(value) { return value !== null && typeof value === 'object' && !Array.isArray(value) }
+function firstDefined(...values) { return values.find((value) => value !== undefined && value !== null && value !== '') }
+function finiteNumber(value) { const number = Number(value); return Number.isFinite(number) ? number : null }
+function idOf(value) { if (typeof value === 'string' || typeof value === 'number') return String(value); if (isObject(value)) return idOf(firstDefined(value.id, value.objectId, value.ref, value.key, value.name)); return null }
+function arrayFrom(value) { if (Array.isArray(value)) return value; if (isObject(value)) return Object.entries(value).map(([key, item]) => isObject(item) ? { ...item, hole: firstDefined(item.hole, item.holeNumber, key) } : { hole: key, candidate: item }); return [] }
+function listValue(...values) { for (const value of values) { if (Array.isArray(value) && value.length) return value.map((item) => typeof item === 'string' ? item : JSON.stringify(item)); if (typeof value === 'string' && value.trim()) return [value] } return [] }
+function statusLabel(value) { return STATUS_LABELS[value] || String(value || 'unknown') }
+function greenClassificationLabel(value) { return GREEN_CLASS_LABELS[String(value || 'unknown').toLowerCase()] || String(value || 'unknown') }
+function formatScore(value) { const number = finiteNumber(value); return number === null ? '—' : number.toFixed(3) }
+function formatMeters(value) { const number = finiteNumber(value); return number === null ? '—' : `${number.toFixed(1)} m` }
+function formatCount(value) { const number = finiteNumber(value); return number === null ? '—' : String(Math.round(number)) }
+function formatCoordinate(point) { if (!point?.coordinates || !Array.isArray(point.coordinates)) return '—'; const longitude = finiteNumber(point.coordinates[0]); const latitude = finiteNumber(point.coordinates[1]); return longitude === null || latitude === null ? '—' : `${latitude.toFixed(7)}°N, ${longitude.toFixed(7)}°E` }
+function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char])) }
+function renderList(element, values) { const list = Array.isArray(values) && values.length ? values : ['—']; element.innerHTML = list.map((value) => `<li>${escapeHtml(value)}</li>`).join('') }
+
+function objectKind(object) {
+  const kind = String(object?.kind || object?.type || '').toLowerCase()
+  if (kind.includes('tee') || kind.includes('start')) return 'tee'; if (kind.includes('green') || kind.includes('putting')) return 'green'; if (kind.includes('bunker')) return 'bunker'; if (kind.includes('water') || kind.includes('pond')) return 'water'; if (kind.includes('cart') || kind.includes('path')) return 'cartpath'; if (kind.includes('rough')) return 'rough'; return kind
+}
+function pixelGeometry(item) { return item?.imagePixels?.geometry || item?.imagePixels?.centerline || item?.pixelGeometry || item?.geometryPixels || null }
+function normalizeObject(item, fallbackKind) { if (!isObject(item)) return null; const id = idOf(firstDefined(item.id, item.objectId, item.key)); return id ? { ...item, id, kind: item.kind || item.type || fallbackKind || 'unknown' } : null }
+
+function normalizeMapping(raw, holeMeta, transitions, solutionId, includeAlternatives = true) {
+  const source = isObject(raw) ? raw : {}; const candidate = firstDefined(source.candidate, source.match, source.assignment, source.mapping, source.holeCandidate, source); const candidateObject = isObject(candidate) ? candidate : {}
+  const teeZone = idOf(firstDefined(candidateObject.teeZone, candidateObject.tee_zone, candidateObject.teeZoneId, candidateObject.tee_zone_id, source.teeZone, source.teeZoneId)); const tee = idOf(firstDefined(candidateObject.tee, candidateObject.teeId, candidateObject.tee_id, teeZone, source.tee, source.teeId, source.teeZone, source.teeZoneId)); const green = idOf(firstDefined(candidateObject.green, candidateObject.greenId, candidateObject.green_id, source.green, source.greenId)); const corridor = idOf(firstDefined(candidateObject.corridor, candidateObject.corridorId, candidateObject.corridor_id, source.corridor, source.corridorId));
+  const hole = Number(firstDefined(source.hole, source.holeNumber, candidateObject.hole, holeMeta?.hole)); const transition = firstDefined(source.transition, source.nextTransition, source.transitionToNext, source.next, transitions.find((item) => Number(firstDefined(item.fromHole, item.from, item.sourceHole)) === hole && Number(firstDefined(item.toHole, item.to, item.targetHole)) === hole + 1)) || null
+  const alternatives = includeAlternatives ? arrayFrom(firstDefined(source.alternatives, source.alternativeCandidates, candidateObject.alternatives)).map((item) => normalizeMapping(item, { hole }, transitions, solutionId, false)).filter((item) => item.corridor || item.green || item.tee) : []
+  const score = finiteNumber(firstDefined(candidateObject.score, candidateObject.rankingScore, candidateObject.candidateScore, source.score, source.rankingScore, source.candidateScore))
+  return { ...source, ...candidateObject, hole: Number.isInteger(hole) ? hole : holeMeta?.hole, tee, teeZone: teeZone || tee, green, corridor, score, rankingScore: score, status: firstDefined(source.status, candidateObject.status, holeMeta?.status, candidate ? 'candidate' : 'unknown'), evidence: listValue(source.evidence, candidateObject.evidence, holeMeta?.evidence), conflicts: listValue(source.conflicts, candidateObject.conflicts, holeMeta?.conflicts), limitations: listValue(source.limitations, candidateObject.limitations, holeMeta?.limitations), alternatives, transition, solutionId, mappingIndependentEvidence: firstDefined(source.mappingIndependentEvidence, candidateObject.mappingIndependentEvidence, holeMeta?.mappingIndependentEvidence, false) === true, fieldConfirmed: firstDefined(source.fieldConfirmed, candidateObject.fieldConfirmed, holeMeta?.fieldConfirmed, false) === true }
+}
+function collectSolutionMappings(solution) { return arrayFrom(firstDefined(solution?.holes, solution?.holeMappings, solution?.hole_mappings, solution?.mappings, solution?.assignments, solution?.mapping)) }
+function transitionListFor(solution, documentTransitions) { return arrayFrom(firstDefined(solution?.transitions, solution?.transitionGraph, solution?.transitionCosts, documentTransitions)) }
+function normalizeSolution(raw, index, holes, documentTransitions) {
+  const source = isObject(raw) ? raw : {}; const id = idOf(firstDefined(source.id, source.solutionId, source.solution_id, source.key)) || `solution-${index + 1}`; const label = String(firstDefined(source.label, source.name, source.title, source.displayName, `Solution ${String.fromCharCode(65 + index)}`)); const transitions = transitionListFor(source, documentTransitions); const rawMappings = collectSolutionMappings(source); const hasExplicitMappings = rawMappings.length > 0; const mappingByHole = new Map(rawMappings.map((item) => [Number(firstDefined(item?.hole, item?.holeNumber, item?.id)), item]))
+  const mappings = HOLE_NUMBERS.map((number) => { const holeMeta = holes.find((hole) => hole.hole === number) || { hole: number, status: 'unknown' }; const rawMapping = mappingByHole.get(number); if (rawMapping) return normalizeMapping(rawMapping, holeMeta, transitions, id); if (!hasExplicitMappings && holeMeta.bestCandidate) return normalizeMapping({ ...holeMeta.bestCandidate, alternatives: holeMeta.alternatives }, holeMeta, transitions, id); return normalizeMapping({ hole: number, status: holeMeta.status }, holeMeta, transitions, id) })
+  const rankedScore = finiteNumber(firstDefined(source.rankingScore, source.overallRankingScore, source.overallScore, source.totalScore, source.score)); const scores = mappings.map((mapping) => mapping.score).filter((value) => value !== null); const score = rankedScore ?? (scores.length ? scores.reduce((total, value) => total + value, 0) / scores.length : null); const conflictCount = finiteNumber(firstDefined(source.conflictCount, source.conflictsCount)) ?? mappings.reduce((total, item) => total + item.conflicts.length, 0); const undeterminedHoleCount = finiteNumber(firstDefined(source.undeterminedHoleCount, source.unknownHoleCount, source.unresolvedHoleCount)) ?? mappings.filter((item) => !item.corridor && !item.green).length
+  return { ...source, id, label, rank: finiteNumber(firstDefined(source.rank, source.ranking, index + 1)) || index + 1, rankingScore: score, overallRankingScore: score, transitionCost: finiteNumber(firstDefined(source.transitionCost, source.totalTransitionCost, source.transitionsCost, source.transitionCostMetres)), featureMatchScore: finiteNumber(firstDefined(source.featureMatchScore, source.feature_score, source.featureScore)), conflictCount, undeterminedHoleCount, transitions, mappings, sourceKind: source._compatibility ? 'compatibility' : 'global' }
+}
+function rawSolutionArray(document) { return arrayFrom(firstDefined(document.globalSolutions, document.global_solutions, document.topSolutions, document.top_solutions, document.solutions, document.globalMatching?.solutions, document.global_matching?.solutions, document.global?.solutions)) }
+function normalizeGreenClassifications(document, objects) {
+  const raw = arrayFrom(firstDefined(document.greenClassifications, document.green_classifications, document.greenCandidates, document.green_candidates, document.greens)); const byId = new Map(); raw.forEach((item) => { const id = idOf(firstDefined(item?.id, item?.green, item?.greenId, item?.objectId)); if (id) byId.set(id, item) }); objects.filter((object) => objectKind(object) === 'green').forEach((object) => { if (!byId.has(object.id)) byId.set(object.id, object) })
+  return [...byId.entries()].map(([id, item]) => { const classification = String(firstDefined(item.classification, item.greenClassification, item.role, item.category, item.status, 'unknown')).toLowerCase(); return { ...item, id, classification, label: greenClassificationLabel(classification), confidence: firstDefined(item.confidence, item.classificationConfidence, '—'), evidence: listValue(item.evidence, item.classificationEvidence), object: objects.find((object) => object.id === id) || null } }).sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
+}
+function normalizeDocument(raw) {
+  const document = isObject(raw) ? raw : {}; const objects = asArray(document.objects).map((item) => normalizeObject(item)).filter(Boolean); const teeZones = arrayFrom(firstDefined(document.teeZones, document.tee_zones, document.teeZoneCandidates, document.tee_zone_candidates)).map((item) => normalizeObject(item, 'tee-zone')).filter(Boolean); const objectIds = new Set(objects.map((object) => object.id)); teeZones.forEach((zone) => { if (!objectIds.has(zone.id)) { objects.push(zone); objectIds.add(zone.id) } })
+  const corridors = arrayFrom(firstDefined(document.topologyCorridors, document.topology_corridors, document.corridors, document.holeCorridors, document.hole_corridors)).map((item) => ({ ...item, id: idOf(firstDefined(item?.id, item?.corridorId, item?.key)), tee: idOf(firstDefined(item?.tee, item?.teeId, item?.teeZone, item?.teeZoneId)), teeZone: idOf(firstDefined(item?.teeZone, item?.teeZoneId, item?.tee, item?.teeId)), green: idOf(firstDefined(item?.green, item?.greenId)) })).filter((item) => item.id); const holes = asArray(document.holes).map((hole) => ({ ...hole, hole: Number(hole.hole) })).filter((hole) => Number.isInteger(hole.hole)).sort((a, b) => a.hole - b.hole); const transitions = arrayFrom(firstDefined(document.transitions, document.transitionGraph, document.transitionCosts)); let rawSolutions = rawSolutionArray(document); if (!rawSolutions.length) rawSolutions = [{ id: 'legacy-per-hole', label: '兼容方案：逐洞候选', _compatibility: true }]; const solutions = rawSolutions.map((solution, index) => normalizeSolution(solution, index, holes, transitions)).sort((a, b) => a.rank - b.rank).slice(0, 3); const greenClassifications = normalizeGreenClassifications(document, objects)
+  return { ...document, objects, teeZones, corridors, holes, transitions, solutions, greenClassifications }
 }
 
-function saveJson(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* storage may be disabled */ }
-}
-
-function currentHole() { return state.document?.holes.find((hole) => hole.hole === state.selectedHole) || null }
+function currentHole() { return state.document?.holes.find((hole) => hole.hole === state.selectedHole) || { hole: state.selectedHole, status: 'unknown', teeYardages: {} } }
+function currentSolution() { return state.document?.solutions.find((solution) => solution.id === state.selectedSolutionId) || state.document?.solutions[0] || null }
+function mappingForHole(holeNumber = state.selectedHole) { return currentSolution()?.mappings.find((mapping) => mapping.hole === holeNumber) || null }
+function allMatchesForHole(mapping, hole) { const matches = mapping ? [mapping, ...mapping.alternatives] : []; if (!matches.length && hole?.bestCandidate) matches.push(normalizeMapping(hole.bestCandidate, hole, state.document?.transitions || [], currentSolution()?.id)); return matches }
+function currentMapping() { return mappingForHole() }
+function currentCandidate() { return allMatchesForHole(currentMapping(), currentHole())[state.selectedCandidateIndex] || null }
 function objectById(id) { return state.document?.objects.find((object) => object.id === id) || null }
 function corridorById(id) { return state.document?.corridors.find((corridor) => corridor.id === id) || null }
-function currentCandidate() {
-  const hole = currentHole()
-  if (!hole?.bestCandidate) return null
-  return state.selectedCandidateIndex === 0 ? hole.bestCandidate : hole.alternatives[state.selectedCandidateIndex - 1] || hole.bestCandidate
-}
+function teeObjectFor(candidate) { return objectById(candidate?.teeZone || candidate?.tee) }
+function greenObjectFor(candidate) { return objectById(candidate?.green) }
 
-function formatScore(value) { return Number.isFinite(value) ? value.toFixed(3) : '—' }
-function formatMeters(value) { return Number.isFinite(value) ? `${value.toFixed(1)} m` : '—' }
-function formatCoordinate(point) {
-  if (!point?.coordinates) return '—'
-  return `${point.coordinates[1].toFixed(7)}°N, ${point.coordinates[0].toFixed(7)}°E`
+function renderSolutionPanel() {
+  const solution = currentSolution(); if (!solution) return; elements.solutionSelect.innerHTML = state.document.solutions.map((item, index) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.label || `Solution ${String.fromCharCode(65 + index)}`)}</option>`).join(''); elements.solutionSelect.value = solution.id; elements.solutionSourceBadge.textContent = solution.sourceKind === 'compatibility' ? '兼容旧 JSON' : `Top ${state.document.solutions.length}`
+  const statuses = solution.mappings.reduce((counts, mapping) => { const key = statusLabel(mapping.status); counts[key] = (counts[key] || 0) + 1; return counts }, {}); const metrics = [['总排序分', formatScore(solution.rankingScore)], ['transition cost', formatMeters(solution.transitionCost)], ['feature match', formatScore(solution.featureMatchScore)], ['冲突数量', formatCount(solution.conflictCount)], ['未确定洞', formatCount(solution.undeterminedHoleCount)], ['状态', `${statuses.candidate || 0} candidate / ${statuses.unknown || 0} unknown`]]
+  elements.solutionSummary.innerHTML = metrics.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join(''); elements.solutionNote.textContent = solution.sourceKind === 'compatibility' ? '当前数据没有 global solutions；这里按旧 holes.bestCandidate 生成只读兼容方案。候选排序分不代表概率。' : '所有 score 都是候选排序分，不代表概率。方案切换只改变查看层，不会修改源 JSON。'; const assigned = solution.mappings.filter((mapping) => mapping.corridor || mapping.green).length; const unknown = solution.mappings.filter((mapping) => !mapping.corridor && !mapping.green).length; elements.mappingSummaryBadge.textContent = `${assigned}/18 已映射 · ${unknown} unknown`
 }
-function escapeHtml(value) {
-  return String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]))
+function renderMappingTable() {
+  const solution = currentSolution(); if (!solution) return; const rows = solution.mappings.map((mapping) => { const candidate = mapping.corridor || mapping.green || mapping.tee ? mapping : null; const active = mapping.hole === state.selectedHole; const transition = mapping.transition; const transitionValue = transition ? firstDefined(transition.costMetres, transition.transitionCostMetres, transition.straightTransitionMetres, transition.cost, transition.distanceMetres) : null; const pair = candidate ? `${candidate.teeZone || candidate.tee || '—'} → ${candidate.green || '—'}` : '—'; return `<tr class="${active ? 'active' : ''}"><td><button type="button" class="hole-row-button" data-hole-row="${mapping.hole}">Hole ${mapping.hole}</button></td><td><span class="status-inline status-${escapeHtml(statusLabel(mapping.status))}">${escapeHtml(statusLabel(mapping.status))}</span></td><td>${escapeHtml(pair)}</td><td>${escapeHtml(candidate?.corridor || '—')}</td><td class="number-cell">${escapeHtml(formatScore(candidate?.score))}</td><td class="number-cell">${escapeHtml(formatMeters(transitionValue))}</td></tr>` }).join('')
+  elements.mappingTableWrap.innerHTML = `<div class="table-scroll"><table class="mapping-table"><thead><tr><th>洞</th><th>状态</th><th>Tee zone → Green</th><th>Corridor</th><th>分数</th><th>到下一洞</th></tr></thead><tbody>${rows}</tbody></table></div>`; elements.mappingTableWrap.querySelectorAll('[data-hole-row]').forEach((button) => button.addEventListener('click', () => { state.selectedHole = Number(button.dataset.holeRow); state.selectedCandidateIndex = 0; elements.holeSelect.value = String(state.selectedHole); renderPanel(); drawMap() }))
 }
-function renderList(element, values) {
-  const list = Array.isArray(values) && values.length ? values : ['—']
-  element.innerHTML = list.map((value) => `<li>${escapeHtml(value)}</li>`).join('')
+function renderGreenClassification() {
+  const classifications = state.document?.greenClassifications || []; const counts = classifications.reduce((result, item) => { result[item.classification] = (result[item.classification] || 0) + 1; return result }, {}); elements.greenClassificationBadge.textContent = `${classifications.length} 个候选`; const countText = Object.entries(counts).map(([key, value]) => `${greenClassificationLabel(key)} ${value}`).join(' · ')
+  elements.greenClassificationList.innerHTML = classifications.length ? `<p class="classification-counts">${escapeHtml(countText || 'unknown')}</p>${classifications.map((item) => `<div class="classification-row"><strong>${escapeHtml(item.id)}</strong><span>${escapeHtml(item.label)}</span><small>${escapeHtml(String(firstDefined(item.confidence, '—')))}</small></div>`).join('')}` : '<p class="field-note">当前 JSON 没有 Green 分类记录。</p>'
+  const teeZones = state.document?.teeZones?.length ? state.document.teeZones : state.document?.objects?.filter((object) => objectKind(object) === 'tee') || []; elements.teeZoneBadge.textContent = `${teeZones.length} 个候选`; elements.teeZoneList.innerHTML = teeZones.length ? teeZones.map((zone) => `<div class="tee-zone-row"><strong>${escapeHtml(zone.id)}</strong><span>${escapeHtml(String(firstDefined(zone.source, zone.sourceType, zone.digitization, 'unknown')))}</span><small>${escapeHtml(String(firstDefined(zone.confidence, zone.detectionConfidence, '—')))}</small></div>`).join('') : '<p class="field-note">当前 JSON 没有 Tee zone 候选记录。</p>'
+}
+function renderTransition(transition) {
+  if (!transition) { elements.transitionDetails.textContent = '当前方案没有提供相邻洞转场记录。'; return } const values = [['下一洞', firstDefined(transition.toHole, transition.to, transition.targetHole, '—')], ['转场距离', formatMeters(firstDefined(transition.costMetres, transition.transitionCostMetres, transition.straightTransitionMetres, transition.cost, transition.distanceMetres))], ['路径成本', firstDefined(transition.routeCost, transition.route_cost, transition.routeType, transition.interpretation, '—')], ['冲突 / 说明', firstDefined(transition.conflict, transition.conflicts?.join('；'), transition.note, transition.notes?.join('；'), '—')]]; elements.transitionDetails.innerHTML = values.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')
 }
 
 function renderPanel() {
-  const hole = currentHole()
-  const candidate = currentCandidate()
-  if (!hole) return
-  elements.holeStatus.textContent = hole.status
-  elements.holeSummary.innerHTML = `<span>Par ${escapeHtml(hole.par)}</span><span>Gold ${escapeHtml(hole.teeYardages.gold)} yd</span><span>Blue ${escapeHtml(hole.teeYardages.blue)} yd</span><span>White ${escapeHtml(hole.teeYardages.white)} yd</span><span>Red ${escapeHtml(hole.teeYardages.red)} yd</span>`
-  elements.candidateTitle.textContent = candidate ? `${candidate.tee} → ${candidate.green} · ${candidate.corridor}` : '没有可用候选'
-  elements.candidateScore.textContent = candidate ? `候选排序分 ${formatScore(candidate.score)}` : '—'
+  const hole = currentHole(); const mapping = currentMapping(); const candidate = currentCandidate(); const matches = allMatchesForHole(mapping, hole); const status = candidate?.status || mapping?.status || hole.status || 'unknown'; elements.holeStatus.textContent = statusLabel(status); const yardages = hole.teeYardages || hole.teeDistances || {}
+  elements.holeSummary.innerHTML = [['Par', firstDefined(hole.par, '—')], ['Gold', firstDefined(yardages.gold, yardages.Gold, '—')], ['Blue', firstDefined(yardages.blue, yardages.Blue, '—')], ['White', firstDefined(yardages.white, yardages.White, '—')], ['Red', firstDefined(yardages.red, yardages.Red, '—')]].map(([label, value]) => `<span>${escapeHtml(label)} ${escapeHtml(value)}${label === 'Par' ? '' : ' yd'}</span>`).join('')
+  elements.candidateTitle.textContent = candidate?.corridor || candidate?.green || candidate?.tee ? `${candidate.teeZone || candidate.tee || 'Tee'} → ${candidate.green || 'Green'} · ${candidate.corridor || 'corridor'}` : '没有可用候选'; elements.candidateScore.textContent = candidate ? `候选排序分 ${formatScore(candidate.score)}` : '—'
   if (candidate) {
-    elements.candidateSummary.innerHTML = [
-      ['Tee', candidate.tee], ['Green', candidate.green], ['直线 proxy', formatMeters(candidate.lineLengthMetres)],
-      ['匹配档位', `${candidate.matchedTeeVariant} · ${candidate.matchedYardage} yd`],
-      ['目标长度', formatMeters(candidate.targetMetres)], ['相对误差', `${(candidate.relativeLengthError * 100).toFixed(1)}%`],
-    ].map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')
-    const tee = objectById(candidate.tee); const green = objectById(candidate.green)
-    elements.coordinateGrid.innerHTML = `<div><dt>Tee ${escapeHtml(candidate.tee)}</dt><dd>${escapeHtml(formatCoordinate(tee?.center))}</dd></div><div><dt>Green ${escapeHtml(candidate.green)}</dt><dd>${escapeHtml(formatCoordinate(green?.center))}</dd></div>`
-  } else {
-    elements.candidateSummary.innerHTML = '<div><dt>状态</dt><dd>unknown</dd></div>'
-    elements.coordinateGrid.innerHTML = '<div><dt>Tee</dt><dd>—</dd></div><div><dt>Green</dt><dd>—</dd></div>'
-  }
-  elements.candidateLinks.innerHTML = ''
-  const matches = hole.bestCandidate ? [hole.bestCandidate, ...hole.alternatives] : []
-  matches.forEach((match, index) => {
-    const button = document.createElement('button'); button.type = 'button'; button.className = `candidate-link${index === state.selectedCandidateIndex ? ' active' : ''}`
-    button.textContent = index === 0 ? 'Top candidate' : `候选 ${index + 1}`
-    button.addEventListener('click', () => { state.selectedCandidateIndex = index; renderPanel(); drawMap() }); elements.candidateLinks.append(button)
-  })
-  elements.alternativeList.innerHTML = hole.alternatives.length
-    ? hole.alternatives.map((match, index) => `<button type="button" class="alternative-card${index + 1 === state.selectedCandidateIndex ? ' active' : ''}" data-alternative-index="${index + 1}"><strong>${escapeHtml(match.tee)} → ${escapeHtml(match.green)} · ${escapeHtml(match.corridor)}</strong><small>候选排序分 ${formatScore(match.score)} · ${formatMeters(match.lineLengthMetres)} · ${escapeHtml(match.matchedTeeVariant)} ${escapeHtml(match.matchedYardage)} yd</small></button>`).join('')
-    : '<p class="field-note">暂无替代候选。</p>'
-  elements.alternativeList.querySelectorAll('[data-alternative-index]').forEach((button) => button.addEventListener('click', () => { state.selectedCandidateIndex = Number(button.dataset.alternativeIndex); renderPanel(); drawMap() }))
-  renderList(elements.evidenceList, candidate?.evidence || hole.evidence)
-  renderList(elements.conflictList, candidate?.conflicts || hole.conflicts)
-  const review = state.review[String(hole.hole)] || { pending: false, note: '' }
-  elements.reviewNote.value = review.note || ''
-  elements.pendingBadge.hidden = !review.pending
-  elements.pendingButton.classList.toggle('pending', review.pending)
-  elements.pendingButton.textContent = review.pending ? '已标记待现场确认' : '标记待现场确认'
-  elements.reviewSaved.textContent = review.updatedAt ? `最近保存：${new Date(review.updatedAt).toLocaleString('zh-CN')}` : ''
-  elements.notThisHoleChoice.hidden = true
+    const corridor = corridorById(candidate.corridor); const geometryType = corridor?.centerline ? 'centerline' : firstDefined(corridor?.geometryRole, corridor?.kind, 'corridor'); const teeZone = candidate.teeZone || candidate.tee
+    elements.candidateSummary.innerHTML = [['Tee zone', teeZone || '—'], ['Green', candidate.green || '—'], ['Corridor', candidate.corridor || '—'], ['几何类型', geometryType], ['路线长度', formatMeters(firstDefined(candidate.routeLengthMetres, candidate.centerlineLengthMetres, corridor?.lengthMetres, candidate.lineLengthMetres))], ['匹配档位', firstDefined(candidate.matchedTeeVariant, candidate.teeVariant, '—')], ['目标长度', formatMeters(candidate.targetMetres)], ['相对误差', finiteNumber(candidate.relativeLengthError) === null ? '—' : `${(candidate.relativeLengthError * 100).toFixed(1)}%`], ['独立证据', candidate.mappingIndependentEvidence ? '有' : '无']].map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join(''); const tee = teeObjectFor(candidate); const green = greenObjectFor(candidate); elements.coordinateGrid.innerHTML = `<div><dt>Tee zone ${escapeHtml(teeZone || '—')}</dt><dd>${escapeHtml(formatCoordinate(tee?.center))}</dd></div><div><dt>Green ${escapeHtml(candidate.green || '—')}</dt><dd>${escapeHtml(formatCoordinate(green?.center))}</dd></div>`
+  } else { elements.candidateSummary.innerHTML = '<div><dt>状态</dt><dd>unknown</dd></div>'; elements.coordinateGrid.innerHTML = '<div><dt>Tee zone</dt><dd>—</dd></div><div><dt>Green</dt><dd>—</dd></div>' }
+  elements.candidateLinks.innerHTML = matches.map((match, index) => `<button type="button" class="candidate-link${index === state.selectedCandidateIndex ? ' active' : ''}" data-candidate-index="${index}">${index === 0 ? '全局映射' : `替代 ${index + 1}`} · ${escapeHtml(match.corridor || match.green || 'unknown')}</button>`).join(''); elements.candidateLinks.querySelectorAll('[data-candidate-index]').forEach((button) => button.addEventListener('click', () => { state.selectedCandidateIndex = Number(button.dataset.candidateIndex); renderPanel(); drawMap() }))
+  elements.alternativeList.innerHTML = matches.length > 1 ? matches.slice(1).map((match, index) => `<button type="button" class="alternative-card${index + 1 === state.selectedCandidateIndex ? ' active' : ''}" data-alternative-index="${index + 1}"><strong>${escapeHtml(match.teeZone || match.tee || '—')} → ${escapeHtml(match.green || '—')} · ${escapeHtml(match.corridor || '—')}</strong><small>候选排序分 ${escapeHtml(formatScore(match.score))} · ${escapeHtml(formatMeters(match.routeLengthMetres || match.lineLengthMetres))} · 证据 ${match.evidence.length} 条 · 冲突 ${match.conflicts.length} 条</small></button>`).join('') : '<p class="field-note">暂无替代方案。</p>'; elements.alternativeList.querySelectorAll('[data-alternative-index]').forEach((button) => button.addEventListener('click', () => { state.selectedCandidateIndex = Number(button.dataset.alternativeIndex); renderPanel(); drawMap() }))
+  renderList(elements.evidenceList, candidate?.evidence?.length ? candidate.evidence : hole.evidence); renderList(elements.conflictList, candidate?.conflicts?.length ? candidate.conflicts : hole.conflicts); renderTransition(candidate?.transition || mapping?.transition)
+  const review = state.review[String(hole.hole)] || { pending: false, note: '' }; elements.reviewNote.value = review.note || ''; elements.pendingBadge.hidden = !review.pending; elements.pendingButton.classList.toggle('pending', review.pending); elements.pendingButton.textContent = review.pending ? '已标记待现场确认' : '标记待现场确认'; elements.reviewSaved.textContent = review.updatedAt ? `最近保存：${new Date(review.updatedAt).toLocaleString('zh-CN')}` : ''; elements.notThisHoleChoice.hidden = true
+  renderSolutionPanel(); renderMappingTable(); renderGreenClassification()
 }
-
-function renderEventLog() {
-  const latest = state.events[0]
-  if (!latest) { elements.eventSaved.textContent = '尚未记录现场事件。'; return }
-  const labels = { correct: '正确', 'not-this-hole': '不是这个洞', uncertain: '暂不确定' }
-  const actual = latest.actualHole === 'uncertain' ? '实际洞号不确定' : `实际 Hole ${latest.actualHole ?? '—'}`
-  elements.eventSaved.textContent = `最近事件：预测 Hole ${latest.predictedHole ?? '—'} · ${actual} · ${labels[latest.outcome] || latest.outcome} · ${new Date(latest.timestamp).toLocaleString('zh-CN')}`
-}
-
-function saveReview(patch) {
-  const hole = currentHole(); if (!hole) return
-  const key = String(hole.hole)
-  state.review[key] = { ...(state.review[key] || { pending: false, note: '' }), ...patch, updatedAt: new Date().toISOString() }
-  saveJson(REVIEW_STORAGE_KEY, state.review); renderPanel()
-}
-
+function renderEventLog() { const latest = state.events[0]; if (!latest) { elements.eventSaved.textContent = '尚未记录现场事件。'; return }; const labels = { correct: '正确', 'not-this-hole': '不是这个洞', uncertain: '暂不确定' }; const actual = latest.actualHole === 'uncertain' ? '实际洞号不确定' : `实际 Hole ${latest.actualHole ?? '—'}`; elements.eventSaved.textContent = `最近事件：预测 Hole ${latest.predictedHole ?? '—'} · ${actual} · ${labels[latest.outcome] || latest.outcome} · ${new Date(latest.timestamp).toLocaleString('zh-CN')}` }
+function saveReview(patch) { const hole = currentHole(); if (!hole) return; const key = String(hole.hole); state.review[key] = { ...(state.review[key] || { pending: false, note: '' }), ...patch, updatedAt: new Date().toISOString() }; saveJson(REVIEW_STORAGE_KEY, state.review); renderPanel() }
 function recordEvent(outcome, actualHoleOverride) {
-  const latitudeText = elements.eventLatitude.value.trim()
-  const longitudeText = elements.eventLongitude.value.trim()
-  const hasLatitude = latitudeText.length > 0
-  const hasLongitude = longitudeText.length > 0
-  if (hasLatitude !== hasLongitude) {
-    elements.eventSaved.textContent = '现场坐标需要同时填写纬度和经度，或留空不记录位置。'
-    return
-  }
-  const latitude = Number(latitudeText)
-  const longitude = Number(longitudeText)
-  if ((hasLatitude && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180))) {
-    elements.eventSaved.textContent = '现场 WGS84 坐标无效，请修正后重试。'
-    return
-  }
-  const actualHole = outcome === 'correct' ? currentHole()?.hole ?? null : outcome === 'not-this-hole' ? actualHoleOverride ?? 'uncertain' : 'uncertain'
-  const event = {
-    schemaVersion: 1,
-    timestamp: new Date().toISOString(),
-    predictedHole: currentHole()?.hole ?? null,
-    actualHole,
-    outcome,
-    confirmationSource: 'field',
-    note: state.review[String(state.selectedHole)]?.note || undefined,
-  }
-  if (hasLatitude) event.position = { latitude, longitude }
-  state.events = [event, ...state.events].slice(0, 50)
-  saveJson(EVENTS_STORAGE_KEY, state.events); elements.notThisHoleChoice.hidden = true; renderEventLog()
+  const latitudeText = elements.eventLatitude.value.trim(); const longitudeText = elements.eventLongitude.value.trim(); const hasLatitude = latitudeText.length > 0; const hasLongitude = longitudeText.length > 0; if (hasLatitude !== hasLongitude) { elements.eventSaved.textContent = '现场坐标需要同时填写纬度和经度，或留空不记录位置。'; return }; const latitude = Number(latitudeText); const longitude = Number(longitudeText); if (hasLatitude && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180)) { elements.eventSaved.textContent = '现场 WGS84 坐标无效，请修正后重试。'; return }
+  const actualHole = outcome === 'correct' ? currentHole()?.hole ?? null : outcome === 'not-this-hole' ? actualHoleOverride ?? 'uncertain' : 'uncertain'; const event = { schemaVersion: 1, timestamp: new Date().toISOString(), predictedHole: currentHole()?.hole ?? null, actualHole, outcome, confirmationSource: 'field', note: state.review[String(state.selectedHole)]?.note || undefined }; if (hasLatitude) event.position = { latitude, longitude }; state.events = [event, ...state.events].slice(0, 50); saveJson(EVENTS_STORAGE_KEY, state.events); elements.notThisHoleChoice.hidden = true; renderEventLog()
 }
 
+function geometryPaths(geometry) { if (!geometry?.coordinates) return []; if (geometry.type === 'Polygon') return geometry.coordinates; if (geometry.type === 'MultiPolygon') return geometry.coordinates.flat(); if (geometry.type === 'LineString') return [geometry.coordinates]; if (geometry.type === 'MultiLineString') return geometry.coordinates; return [] }
 function drawGeometry(ctx, geometry, style) {
-  if (!geometry?.coordinates) return
-  const rings = geometry.type === 'Polygon' ? geometry.coordinates : [geometry.coordinates]
-  ctx.save(); ctx.strokeStyle = style.stroke; ctx.fillStyle = style.fill || 'transparent'; ctx.lineWidth = style.width || 1; ctx.setLineDash(style.dash || [])
-  rings.forEach((ring) => {
-    if (!ring?.length) return
-    ctx.beginPath()
-    ring.forEach((point, index) => { const [x, y] = worldToScreen(point); index ? ctx.lineTo(x, y) : ctx.moveTo(x, y) })
-    if (geometry.type === 'Polygon') ctx.closePath()
-    if (style.fill) ctx.fill(); ctx.stroke()
-  })
-  ctx.restore()
+  if (!geometry?.coordinates) return; if (geometry.type === 'Point') { const [x, y] = worldToScreen(geometry.coordinates); ctx.save(); ctx.fillStyle = style.fill || style.stroke; ctx.beginPath(); ctx.arc(x, y, style.radius || 5, 0, Math.PI * 2); ctx.fill(); ctx.restore(); return }
+  const paths = geometryPaths(geometry); if (!paths.length) return; ctx.save(); ctx.strokeStyle = style.stroke; ctx.fillStyle = style.fill || 'transparent'; ctx.lineWidth = style.width || 1; ctx.setLineDash(style.dash || []); paths.forEach((ring) => { if (!ring?.length) return; ctx.beginPath(); ring.forEach((point, index) => { const [x, y] = worldToScreen(point); index ? ctx.lineTo(x, y) : ctx.moveTo(x, y) }); if (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon') ctx.closePath(); if (style.fill) ctx.fill(); ctx.stroke() }); ctx.restore()
 }
-
 function worldToScreen([x, y]) { return [state.view.offsetX + x * state.view.scale, state.view.offsetY + y * state.view.scale] }
 function screenToWorld(x, y) { return [(x - state.view.offsetX) / state.view.scale, (y - state.view.offsetY) / state.view.scale] }
-
 function drawMap() {
-  const canvas = elements.canvas
-  if (!state.document || !state.metadata || !state.image?.complete) return
-  const rect = canvas.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1
-  if (canvas.width !== Math.round(rect.width * dpr) || canvas.height !== Math.round(rect.height * dpr)) { canvas.width = Math.round(rect.width * dpr); canvas.height = Math.round(rect.height * dpr) }
-  const ctx = canvas.getContext('2d'); if (!ctx) return
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, rect.width, rect.height); ctx.fillStyle = '#0c1711'; ctx.fillRect(0, 0, rect.width, rect.height)
-  const imageWidth = state.metadata.raster.width; const imageHeight = state.metadata.raster.height
-  ctx.drawImage(state.image, state.view.offsetX, state.view.offsetY, imageWidth * state.view.scale, imageHeight * state.view.scale)
-  const styles = {
-    water: { stroke: 'rgba(90,170,230,.78)', fill: 'rgba(90,170,230,.22)', width: 2 },
-    bunker: { stroke: 'rgba(230,195,121,.9)', fill: 'rgba(230,195,121,.25)', width: 1 },
-    rough: { stroke: 'rgba(133,190,120,.5)', fill: 'rgba(133,190,120,.08)', width: 1 },
-    cartpath: { stroke: 'rgba(232,232,220,.48)', width: 1 },
-    green: { stroke: 'rgba(95,241,199,.92)', fill: 'rgba(95,241,199,.25)', width: 2 },
-    tee: { stroke: 'rgba(242,133,220,.95)', fill: 'rgba(242,133,220,.28)', width: 2 },
-  }
-  ;(state.document.objects || []).forEach((object) => drawGeometry(ctx, object.imagePixels?.geometry, styles[object.kind] || { stroke: 'rgba(255,255,255,.4)', width: 1 }))
-  ;(state.document.corridors || []).forEach((corridor) => drawGeometry(ctx, corridor.imagePixels?.geometry, { stroke: 'rgba(255,198,100,.16)', width: 1, dash: [7, 6] }))
-  const hole = currentHole(); state.hitTargets = []
-  if (hole) {
-    const matches = hole.bestCandidate ? [hole.bestCandidate, ...hole.alternatives] : []
-    matches.forEach((match, index) => {
-      const corridor = corridorById(match.corridor); if (!corridor) return
-      const active = index === state.selectedCandidateIndex
-      drawGeometry(ctx, corridor.imagePixels?.geometry, { stroke: active ? '#fff3a1' : '#ffbb5f', width: active ? 5 : 2.5, dash: active ? [] : [10, 7] })
-      ;[objectById(match.tee), objectById(match.green)].forEach((object) => { if (object) drawGeometry(ctx, object.imagePixels?.geometry, { stroke: active ? '#fff3a1' : '#ffbb5f', fill: active ? 'rgba(255,243,161,.35)' : 'rgba(255,187,95,.16)', width: active ? 3 : 1.5 }) })
-      if (active) {
-        const coordinates = corridor.imagePixels.geometry.coordinates; const [x1, y1] = worldToScreen(coordinates[0]); const [x2, y2] = worldToScreen(coordinates[coordinates.length - 1])
-        ctx.save(); ctx.fillStyle = '#fff3a1'; ctx.font = '700 13px sans-serif'; ctx.fillText(`${match.tee} → ${match.green}`, x1 + 7, y1 - 7); ctx.fillText(`Hole ${hole.hole} · ${match.corridor}`, x2 + 7, y2 - 7); ctx.restore()
-      }
-      state.hitTargets.push({ index, coordinates: corridor.imagePixels.geometry.coordinates })
-    })
-  }
-  elements.mapReadout.textContent = `缩放 ${(state.view.scale * 100).toFixed(0)}% · ${state.document.objects.length} 个空间对象 · ${state.document.corridors.length} 条 corridor proxy`
+  const canvas = elements.canvas; if (!state.document || !state.metadata || !state.image?.complete) return; const rect = canvas.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1; if (canvas.width !== Math.round(rect.width * dpr) || canvas.height !== Math.round(rect.height * dpr)) { canvas.width = Math.round(rect.width * dpr); canvas.height = Math.round(rect.height * dpr) }; const ctx = canvas.getContext('2d'); if (!ctx) return; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, rect.width, rect.height); ctx.fillStyle = '#0c1711'; ctx.fillRect(0, 0, rect.width, rect.height); const imageWidth = state.metadata.raster.width; const imageHeight = state.metadata.raster.height; ctx.drawImage(state.image, state.view.offsetX, state.view.offsetY, imageWidth * state.view.scale, imageHeight * state.view.scale)
+  const styles = { water: { stroke: 'rgba(90,170,230,.78)', fill: 'rgba(90,170,230,.22)', width: 2 }, bunker: { stroke: 'rgba(230,195,121,.9)', fill: 'rgba(230,195,121,.25)', width: 1 }, rough: { stroke: 'rgba(133,190,120,.5)', fill: 'rgba(133,190,120,.08)', width: 1 }, cartpath: { stroke: 'rgba(232,232,220,.48)', width: 1 }, green: { stroke: 'rgba(95,241,199,.92)', fill: 'rgba(95,241,199,.25)', width: 2 }, tee: { stroke: 'rgba(242,133,220,.95)', fill: 'rgba(242,133,220,.28)', width: 2 } }
+  ;(state.document.objects || []).forEach((object) => { const kind = objectKind(object); const enabled = kind === 'green' ? state.layers.greens : kind === 'tee' ? state.layers.teeZones : state.layers.context; if (enabled) drawGeometry(ctx, pixelGeometry(object), styles[kind] || { stroke: 'rgba(255,255,255,.4)', width: 1 }) }); if (state.layers.corridors) (state.document.corridors || []).forEach((corridor) => drawGeometry(ctx, pixelGeometry(corridor), { stroke: 'rgba(255,198,100,.16)', width: 1, dash: [7, 6] }))
+  const solution = currentSolution(); const hole = currentHole(); state.hitTargets = []; const palette = ['#8df6bd', '#ffc864', '#95c9ff', '#f1a5ff', '#ff9c7a', '#d4ef83']
+  solution?.mappings?.forEach((mapping) => { const corridor = corridorById(mapping.corridor); if (!corridor || !state.layers.corridors) return; const active = mapping.hole === state.selectedHole && state.selectedCandidateIndex === 0; const color = palette[(mapping.hole - 1) % palette.length]; drawGeometry(ctx, pixelGeometry(corridor), { stroke: active ? '#fff3a1' : color, width: active ? 5 : 2.2, dash: active ? [] : [8, 6] }); [teeObjectFor(mapping), greenObjectFor(mapping)].forEach((object) => { if (object) drawGeometry(ctx, pixelGeometry(object), { stroke: active ? '#fff3a1' : color, fill: active ? 'rgba(255,243,161,.35)' : 'rgba(255,255,255,.08)', width: active ? 3 : 1.5 }) }); const coordinates = pixelGeometry(corridor)?.coordinates; if (active && coordinates?.length) { const [x, y] = worldToScreen(coordinates[0]); ctx.save(); ctx.fillStyle = '#fff3a1'; ctx.font = '700 13px sans-serif'; ctx.fillText(`Hole ${mapping.hole} · ${mapping.corridor}`, x + 7, y - 7); ctx.restore() }; if (coordinates?.length) state.hitTargets.push({ hole: mapping.hole, index: 0, coordinates }) })
+  const selectedAlternative = currentCandidate(); if (state.selectedCandidateIndex > 0 && selectedAlternative?.corridor) { const corridor = corridorById(selectedAlternative.corridor); const coordinates = pixelGeometry(corridor)?.coordinates; if (corridor) drawGeometry(ctx, pixelGeometry(corridor), { stroke: '#ffbb5f', width: 5, dash: [10, 7] }); if (coordinates?.length) state.hitTargets.push({ hole: state.selectedHole, index: state.selectedCandidateIndex, coordinates }) }
+  const objectCounts = state.document.summary?.objectCounts || {}; elements.mapReadout.textContent = `方案 ${solution?.label || '—'} · 缩放 ${(state.view.scale * 100).toFixed(0)}% · ${state.document.objects.length} 个空间对象 · ${state.document.corridors.length} 条 corridor · ${objectCounts.green || state.document.greenClassifications?.length || 0} Green`
 }
-
-function fitView() {
-  const rect = elements.canvas.getBoundingClientRect(); if (!state.metadata || !rect.width || !rect.height) return
-  state.view.scale = Math.min(rect.width / state.metadata.raster.width, rect.height / state.metadata.raster.height) * .96
-  state.view.offsetX = (rect.width - state.metadata.raster.width * state.view.scale) / 2; state.view.offsetY = (rect.height - state.metadata.raster.height * state.view.scale) / 2; state.view.fitted = true; drawMap()
-}
-
-function zoomAt(factor, screenX, screenY) {
-  const [worldX, worldY] = screenToWorld(screenX, screenY); state.view.scale = Math.max(.035, Math.min(1.6, state.view.scale * factor)); state.view.offsetX = screenX - worldX * state.view.scale; state.view.offsetY = screenY - worldY * state.view.scale; drawMap()
-}
-
+function fitView() { const rect = elements.canvas.getBoundingClientRect(); if (!state.metadata || !rect.width || !rect.height) return; state.view.scale = Math.min(rect.width / state.metadata.raster.width, rect.height / state.metadata.raster.height) * .96; state.view.offsetX = (rect.width - state.metadata.raster.width * state.view.scale) / 2; state.view.offsetY = (rect.height - state.metadata.raster.height * state.view.scale) / 2; state.view.fitted = true; drawMap() }
+function zoomAt(factor, screenX, screenY) { const [worldX, worldY] = screenToWorld(screenX, screenY); state.view.scale = Math.max(.035, Math.min(1.6, state.view.scale * factor)); state.view.offsetX = screenX - worldX * state.view.scale; state.view.offsetY = screenY - worldY * state.view.scale; drawMap() }
 function pointerPosition(event) { const rect = elements.canvas.getBoundingClientRect(); return [event.clientX - rect.left, event.clientY - rect.top] }
-function distanceToSegment(point, start, end) {
-  const [px, py] = point; const [x1, y1] = start; const [x2, y2] = end; const dx = x2 - x1; const dy = y2 - y1; const lengthSquared = dx * dx + dy * dy; if (!lengthSquared) return Math.hypot(px - x1, py - y1)
-  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lengthSquared)); return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy))
-}
+function distanceToSegment(point, start, end) { const [px, py] = point; const [x1, y1] = start; const [x2, y2] = end; const dx = x2 - x1; const dy = y2 - y1; const lengthSquared = dx * dx + dy * dy; if (!lengthSquared) return Math.hypot(px - x1, py - y1); const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lengthSquared)); return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy)) }
 function distanceToLine(point, coordinates) { let distance = Infinity; for (let index = 1; index < coordinates.length; index += 1) distance = Math.min(distance, distanceToSegment(point, coordinates[index - 1], coordinates[index])); return distance }
 
-elements.holeSelect.addEventListener('change', () => { state.selectedHole = Number(elements.holeSelect.value); state.selectedCandidateIndex = 0; renderPanel(); drawMap() })
-elements.pendingButton.addEventListener('click', () => { const current = state.review[String(state.selectedHole)]?.pending; saveReview({ pending: !current }) })
-elements.saveNoteButton.addEventListener('click', () => { saveReview({ note: elements.reviewNote.value.trim() }); elements.reviewSaved.textContent = `已保存：${new Date().toLocaleString('zh-CN')}` })
-document.querySelectorAll('[data-event-outcome]').forEach((button) => button.addEventListener('click', () => {
-  if (button.dataset.eventOutcome === 'not-this-hole') {
-    elements.notThisHoleChoice.hidden = false
-    elements.actualHoleSelect.focus()
-    return
-  }
-  recordEvent(button.dataset.eventOutcome)
-}))
-elements.saveNotThisHoleButton.addEventListener('click', () => {
-  const value = elements.actualHoleSelect.value
-  recordEvent('not-this-hole', value === 'uncertain' ? 'uncertain' : Number(value))
-})
-document.querySelector('#fitButton').addEventListener('click', fitView)
-document.querySelector('#resetButton').addEventListener('click', fitView)
-document.querySelector('#zoomInButton').addEventListener('click', () => zoomAt(1.25, elements.canvas.clientWidth / 2, elements.canvas.clientHeight / 2))
-document.querySelector('#zoomOutButton').addEventListener('click', () => zoomAt(.8, elements.canvas.clientWidth / 2, elements.canvas.clientHeight / 2))
-elements.canvas.addEventListener('wheel', (event) => { event.preventDefault(); const [x, y] = pointerPosition(event); zoomAt(event.deltaY < 0 ? 1.12 : .89, x, y) }, { passive: false })
-elements.canvas.addEventListener('pointerdown', (event) => { state.dragging = true; state.dragStart = { x: event.clientX, y: event.clientY, offsetX: state.view.offsetX, offsetY: state.view.offsetY }; elements.canvas.classList.add('dragging'); elements.canvas.setPointerCapture(event.pointerId) })
-elements.canvas.addEventListener('pointermove', (event) => { if (!state.dragging || !state.dragStart) return; state.view.offsetX = state.dragStart.offsetX + event.clientX - state.dragStart.x; state.view.offsetY = state.dragStart.offsetY + event.clientY - state.dragStart.y; drawMap() })
-elements.canvas.addEventListener('pointerup', (event) => {
-  const moved = state.dragStart && Math.hypot(event.clientX - state.dragStart.x, event.clientY - state.dragStart.y) > 5
-  state.dragging = false; elements.canvas.classList.remove('dragging'); if (elements.canvas.hasPointerCapture(event.pointerId)) elements.canvas.releasePointerCapture(event.pointerId); if (moved) return
-  const [x, y] = pointerPosition(event); const world = screenToWorld(x, y)
-  const target = state.hitTargets.map((candidate) => ({ ...candidate, distance: distanceToLine(world, candidate.coordinates) })).sort((a, b) => a.distance - b.distance)[0]
-  if (target && target.distance < 22 / state.view.scale) { state.selectedCandidateIndex = target.index; renderPanel(); drawMap() }
-})
-elements.canvas.addEventListener('pointercancel', () => { state.dragging = false; elements.canvas.classList.remove('dragging') })
-window.addEventListener('resize', () => { if (state.view.fitted) fitView(); else drawMap() })
-elements.capturePositionButton.addEventListener('click', () => {
-  if (!navigator.geolocation) { elements.eventSaved.textContent = '当前浏览器不支持 GPS，请手动填写 WGS84 坐标。'; return }
-  elements.eventSaved.textContent = '正在请求当前 GPS…'
-  navigator.geolocation.getCurrentPosition((position) => {
-    elements.eventLatitude.value = position.coords.latitude.toFixed(7)
-    elements.eventLongitude.value = position.coords.longitude.toFixed(7)
-    elements.eventSaved.textContent = `已读取 GPS（精度约 ${Number.isFinite(position.coords.accuracy) ? position.coords.accuracy.toFixed(1) : '—'} m）。`
-  }, () => { elements.eventSaved.textContent = '无法读取 GPS，请检查浏览器权限或手动填写 WGS84 坐标。' }, { enableHighAccuracy: true, timeout: 10000 })
-})
+elements.solutionSelect.addEventListener('change', () => { state.selectedSolutionId = elements.solutionSelect.value; state.selectedCandidateIndex = 0; renderPanel(); drawMap() }); elements.holeSelect.addEventListener('change', () => { state.selectedHole = Number(elements.holeSelect.value); state.selectedCandidateIndex = 0; renderPanel(); drawMap() }); elements.pendingButton.addEventListener('click', () => { const current = state.review[String(state.selectedHole)]?.pending; saveReview({ pending: !current }) }); elements.saveNoteButton.addEventListener('click', () => { saveReview({ note: elements.reviewNote.value.trim() }); elements.reviewSaved.textContent = `已保存：${new Date().toLocaleString('zh-CN')}` })
+document.querySelectorAll('[data-event-outcome]').forEach((button) => button.addEventListener('click', () => { if (button.dataset.eventOutcome === 'not-this-hole') { elements.notThisHoleChoice.hidden = false; elements.actualHoleSelect.focus(); return } recordEvent(button.dataset.eventOutcome) })); elements.saveNotThisHoleButton.addEventListener('click', () => { const value = elements.actualHoleSelect.value; recordEvent('not-this-hole', value === 'uncertain' ? 'uncertain' : Number(value)) }); document.querySelector('#fitButton').addEventListener('click', fitView); document.querySelector('#resetButton').addEventListener('click', fitView); document.querySelector('#zoomInButton').addEventListener('click', () => zoomAt(1.25, elements.canvas.clientWidth / 2, elements.canvas.clientHeight / 2)); document.querySelector('#zoomOutButton').addEventListener('click', () => zoomAt(.8, elements.canvas.clientWidth / 2, elements.canvas.clientHeight / 2))
+elements.layerCorridors.addEventListener('change', () => { state.layers.corridors = elements.layerCorridors.checked; drawMap() }); elements.layerTeeZones.addEventListener('change', () => { state.layers.teeZones = elements.layerTeeZones.checked; drawMap() }); elements.layerGreens.addEventListener('change', () => { state.layers.greens = elements.layerGreens.checked; drawMap() }); elements.layerContext.addEventListener('change', () => { state.layers.context = elements.layerContext.checked; drawMap() })
+elements.canvas.addEventListener('wheel', (event) => { event.preventDefault(); const [x, y] = pointerPosition(event); zoomAt(event.deltaY < 0 ? 1.12 : .89, x, y) }, { passive: false }); elements.canvas.addEventListener('pointerdown', (event) => { state.dragging = true; state.dragStart = { x: event.clientX, y: event.clientY, offsetX: state.view.offsetX, offsetY: state.view.offsetY }; elements.canvas.classList.add('dragging'); elements.canvas.setPointerCapture(event.pointerId) }); elements.canvas.addEventListener('pointermove', (event) => { if (!state.dragging || !state.dragStart) return; state.view.offsetX = state.dragStart.offsetX + event.clientX - state.dragStart.x; state.view.offsetY = state.dragStart.offsetY + event.clientY - state.dragStart.y; drawMap() })
+elements.canvas.addEventListener('pointerup', (event) => { const moved = state.dragStart && Math.hypot(event.clientX - state.dragStart.x, event.clientY - state.dragStart.y) > 5; state.dragging = false; elements.canvas.classList.remove('dragging'); if (elements.canvas.hasPointerCapture(event.pointerId)) elements.canvas.releasePointerCapture(event.pointerId); if (moved) return; const [x, y] = pointerPosition(event); const world = screenToWorld(x, y); const target = state.hitTargets.map((item) => ({ ...item, distance: distanceToLine(world, item.coordinates) })).sort((a, b) => a.distance - b.distance)[0]; if (target && target.distance < 22 / state.view.scale) { state.selectedHole = target.hole; state.selectedCandidateIndex = target.index; elements.holeSelect.value = String(target.hole); renderPanel(); drawMap() } }); elements.canvas.addEventListener('pointercancel', () => { state.dragging = false; elements.canvas.classList.remove('dragging') }); window.addEventListener('resize', () => { if (state.view.fitted) fitView(); else drawMap() })
+elements.capturePositionButton.addEventListener('click', () => { if (!navigator.geolocation) { elements.eventSaved.textContent = '当前浏览器不支持 GPS，请手动填写 WGS84 坐标。'; return }; elements.eventSaved.textContent = '正在请求当前 GPS…'; navigator.geolocation.getCurrentPosition((position) => { elements.eventLatitude.value = position.coords.latitude.toFixed(7); elements.eventLongitude.value = position.coords.longitude.toFixed(7); elements.eventSaved.textContent = `已读取 GPS（精度约 ${Number.isFinite(position.coords.accuracy) ? position.coords.accuracy.toFixed(1) : '—'} m）。` }, () => { elements.eventSaved.textContent = '无法读取 GPS，请检查浏览器权限或手动填写 WGS84 坐标。' }, { enableHighAccuracy: true, timeout: 10000 }) })
 
 async function initialize() {
   try {
-    const [documentResponse, metadataResponse] = await Promise.all([fetch(DATA_URL), fetch(METADATA_URL)])
-    if (!documentResponse.ok || !metadataResponse.ok) throw new Error('候选 JSON 或影像 metadata 无法读取，请通过 Vite 或静态 HTTP 服务打开此目录。')
-    state.document = await documentResponse.json(); state.metadata = await metadataResponse.json()
-    state.image = new Image(); state.image.src = PREVIEW_URL
-    await new Promise((resolve, reject) => { state.image.addEventListener('load', resolve, { once: true }); state.image.addEventListener('error', reject, { once: true }) })
-    state.document.holes.forEach((hole) => { const option = document.createElement('option'); option.value = hole.hole; option.textContent = `Hole ${hole.hole} · Par ${hole.par} · ${hole.status}`; elements.holeSelect.append(option) })
-    elements.holeSelect.value = String(state.selectedHole)
-    elements.datasetMeta.textContent = `2023 正射影像 · EPSG:${state.metadata.raster.sourceCrs.epsg} → EPSG:4326 · ${state.metadata.raster.width} × ${state.metadata.raster.height} · ${state.document.summary.objectCounts.green} Green / ${state.document.summary.objectCounts.tee} Tee / ${state.document.summary.corridorCount} corridor`
-    elements.mapLoading.hidden = true; renderPanel(); renderEventLog(); requestAnimationFrame(fitView)
-  } catch (error) {
-    elements.mapLoading.hidden = true; elements.loadError.hidden = false; elements.loadError.textContent = error instanceof Error ? error.message : String(error)
-  }
+    const [documentResponse, metadataResponse] = await Promise.all([fetch(DATA_URL), fetch(METADATA_URL)]); if (!documentResponse.ok || !metadataResponse.ok) throw new Error('候选 JSON 或影像 metadata 无法读取，请通过 Vite 或静态 HTTP 服务打开此目录。'); state.document = normalizeDocument(await documentResponse.json()); state.metadata = await metadataResponse.json(); state.selectedSolutionId = state.document.solutions[0]?.id || null; state.image = new Image(); state.image.src = PREVIEW_URL
+    await new Promise((resolve, reject) => { state.image.addEventListener('load', resolve, { once: true }); state.image.addEventListener('error', reject, { once: true }) }); state.document.holes.forEach((hole) => { const option = document.createElement('option'); option.value = hole.hole; option.textContent = `Hole ${hole.hole} · Par ${hole.par ?? '—'} · ${statusLabel(hole.status)}`; elements.holeSelect.append(option) }); HOLE_NUMBERS.filter((number) => !state.document.holes.some((hole) => hole.hole === number)).forEach((number) => { const option = document.createElement('option'); option.value = number; option.textContent = `Hole ${number} · unknown`; elements.holeSelect.append(option) }); elements.holeSelect.value = String(state.selectedHole); elements.datasetMeta.textContent = `2023 正射影像 · EPSG:${state.metadata.raster.sourceCrs.epsg} → EPSG:4326 · ${state.metadata.raster.width} × ${state.metadata.raster.height} · ${state.document.solutions.length} 套方案 · ${state.document.greenClassifications.length} Green 分类`; elements.mapLoading.hidden = true; renderPanel(); renderEventLog(); requestAnimationFrame(fitView)
+  } catch (error) { elements.mapLoading.hidden = true; elements.loadError.hidden = false; elements.loadError.textContent = error instanceof Error ? error.message : String(error) }
 }
-
 initialize()

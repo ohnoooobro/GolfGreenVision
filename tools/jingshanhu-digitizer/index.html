@@ -13,12 +13,29 @@
         <div>
           <p class="eyebrow">Thread 03C · Jingshanhu V0.5</p>
           <h1>净山湖正射影像候选配准</h1>
-          <p class="subtitle">查看空间候选、证据和现场确认准备状态。候选对象 ID 不代表洞号。</p>
+          <p class="subtitle">查看全局候选方案、空间证据和现场确认准备状态。候选对象 ID 不代表洞号。</p>
         </div>
         <div class="header-meta" id="datasetMeta" aria-live="polite">正在读取候选数据…</div>
       </header>
 
       <div id="loadError" class="load-error" hidden></div>
+
+      <section class="global-toolbar panel-section" aria-label="全局方案选择">
+        <div class="section-heading compact">
+          <div>
+            <p class="section-kicker">全局拓扑匹配</p>
+            <h2>选择全场方案</h2>
+          </div>
+          <span id="solutionSourceBadge" class="status-badge">读取中</span>
+        </div>
+        <div class="solution-controls">
+          <label class="field-label" for="solutionSelect">全局方案
+            <select id="solutionSelect" aria-label="选择全局方案"></select>
+          </label>
+          <div id="solutionSummary" class="solution-summary" aria-live="polite"></div>
+        </div>
+        <p id="solutionNote" class="field-note">所有 score 都是候选排序分，不代表概率。方案切换只改变查看层，不会修改源 JSON。</p>
+      </section>
 
       <section class="workspace" aria-label="空间候选审查工作台">
         <section class="map-panel">
@@ -42,7 +59,14 @@
             <span><i class="legend-swatch water"></i>水体</span>
             <span><i class="legend-swatch selected"></i>当前候选</span>
           </div>
-          <p class="map-note">影像为浏览预览，overlay 使用原始影像像素坐标绘制。坐标输出为 EPSG:4326 / WGS84；corridor 是 Tee→Green 直线 proxy，不是球道边界。</p>
+          <div class="layer-controls" aria-label="地图图层">
+            <span class="section-kicker">图层</span>
+            <label><input id="layerCorridors" type="checkbox" checked> Corridor</label>
+            <label><input id="layerTeeZones" type="checkbox" checked> Tee zone</label>
+            <label><input id="layerGreens" type="checkbox" checked> Green</label>
+            <label><input id="layerContext" type="checkbox" checked> OSM 辅助</label>
+          </div>
+          <p class="map-note">影像为浏览预览，overlay 使用原始影像像素坐标绘制。坐标输出为 EPSG:4326 / WGS84；中心线或 corridor 仍按数据中的 estimated / candidate 状态显示。</p>
         </section>
 
         <aside class="review-panel">
@@ -59,6 +83,17 @@
             <div class="hole-summary" id="holeSummary"></div>
           </section>
 
+          <section class="panel-section mapping-section">
+            <div class="section-heading compact">
+              <div>
+                <p class="section-kicker">全场总览</p>
+                <h2>Hole 1–18 映射</h2>
+              </div>
+              <span id="mappingSummaryBadge" class="score-badge">—</span>
+            </div>
+            <div id="mappingTableWrap" class="mapping-table-wrap"></div>
+          </section>
+
           <section class="panel-section candidate-section">
             <div class="section-heading">
               <div>
@@ -71,6 +106,10 @@
             <p class="field-note">候选排序分仅用于候选排序，不代表正确概率。</p>
             <div class="candidate-links" id="candidateLinks"></div>
             <div class="candidate-list" id="alternativeList"></div>
+            <div class="transition-block">
+              <h3>当前转场</h3>
+              <div id="transitionDetails" class="transition-details">—</div>
+            </div>
           </section>
 
           <section class="panel-section evidence-section">
@@ -83,6 +122,19 @@
               <h3>冲突 / 限制</h3>
               <ul id="conflictList"><li>—</li></ul>
             </div>
+          </section>
+
+          <section class="panel-section classification-section">
+            <div class="section-heading compact">
+              <div>
+                <p class="section-kicker">空间对象</p>
+                <h2>Green 分类</h2>
+              </div>
+              <span id="greenClassificationBadge" class="score-badge">—</span>
+            </div>
+            <div id="greenClassificationList" class="classification-list"></div>
+            <div class="tee-zone-heading"><h3>Tee zone 候选</h3><span id="teeZoneBadge" class="score-badge">—</span></div>
+            <div id="teeZoneList" class="tee-zone-list"></div>
           </section>
 
           <section class="panel-section coordinate-section">

@@ -1,7 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { jingshanhuV0Course, validateGolfCourse, validateSpatialCandidates } from '../src/course'
+import {
+  jingshanhuV0Course,
+  validateCourseTopology,
+  validateGlobalHoleSolutionSet,
+  validateGolfCourse,
+  validateSpatialCandidates,
+} from '../src/course'
 import type { SpatialCandidatesDocument } from '../src/course/spatialCandidates'
 import type { GolfCourseGeoJSON } from '../src/course/types'
 
@@ -45,6 +51,7 @@ describe('净山湖 V0 数据集', () => {
 
   it('正射影像空间候选保留对象编号、解释和保守状态', () => {
     expect(validateSpatialCandidates(spatialCandidates)).toEqual([])
+    expect(spatialCandidates.schemaVersion).toBe(2)
     expect(spatialCandidates.coordinateSystem).toContain('WGS84')
     expect(spatialCandidates.objects.filter((object) => object.kind === 'green')).toHaveLength(26)
     expect(spatialCandidates.objects.filter((object) => object.kind === 'tee')).toHaveLength(2)
@@ -52,6 +59,27 @@ describe('净山湖 V0 数据集', () => {
     expect(spatialCandidates.holes).toHaveLength(18)
     expect(spatialCandidates.holes.every((hole) => hole.status === 'candidate' && !hole.fieldConfirmed && hole.bestCandidate !== null)).toBe(true)
     expect(spatialCandidates.holes.every((hole) => hole.evidence.length > 0 && hole.conflicts.length > 0)).toBe(true)
+  })
+
+  it('schema 2 全局拓扑引用闭合，且每套方案保持一对一与保守状态', () => {
+    const enriched = spatialCandidates as SpatialCandidatesDocument & {
+      topology: unknown
+      globalSolutions: unknown[]
+    }
+    expect(validateCourseTopology(enriched.topology)).toEqual([])
+    expect(validateGlobalHoleSolutionSet({
+      schemaVersion: 1,
+      courseId: enriched.courseId,
+      coordinateSystem: enriched.coordinateSystem,
+      solutions: enriched.globalSolutions,
+    }, enriched.topology, fileCourse)).toEqual([])
+    for (const solution of enriched.globalSolutions as Array<{ entries: Array<{ status: string; greenId?: string; corridorId?: string }> }>) {
+      expect(solution.entries).toHaveLength(18)
+      const assigned = solution.entries.filter((entry) => entry.corridorId)
+      expect(new Set(assigned.map((entry) => entry.greenId)).size).toBe(assigned.length)
+      expect(new Set(assigned.map((entry) => entry.corridorId)).size).toBe(assigned.length)
+      expect(solution.entries.every((entry) => entry.status === 'candidate' || entry.status === 'unknown')).toBe(true)
+    }
   })
 
   it('正射影像 metadata 保留实际 CRS、范围和 round-trip 校验结果', () => {
@@ -77,6 +105,7 @@ describe('净山湖 V0 数据集', () => {
     const promoted = structuredClone(spatialCandidates)
     promoted.holes[0].status = 'high-confidence-inferred'
     promoted.holes[0].mappingIndependentEvidence = true
+    promoted.holes[0].independentEvidenceSources = ['空间拓扑', '现场控制点']
     const issues = validateSpatialCandidates(promoted)
     expect(issues.some((issue) => issue.code === 'missing-independent-evidence' && issue.hole === 1)).toBe(false)
   })
