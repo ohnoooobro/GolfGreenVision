@@ -5,6 +5,7 @@ import { useLocation } from './location/useLocation'
 import type { LocationStatus } from './location/types'
 import { checkFieldReadiness, clearFieldTestState, createEmptyFieldTestState, createFieldSample, createFieldSession, createFieldTrackPoint, downloadFieldExport, endFieldSession, getFieldCandidateMapping, isFieldCandidateDatasetLoaded, isFieldStateRecoverable, loadFieldTestState, saveFieldTestState, shouldRecordTrackPoint, undoLastFieldSample, updateFieldSessionStats } from './field'
 import type { FieldTestState } from './field'
+import ScorecardView from './scorecard/ScorecardView'
 
 const STATUS_LABELS: Record<LocationStatus, string> = { waiting: '等待定位', success: '定位成功', 'permission-denied': '权限被拒绝', unavailable: '定位不可用', error: '定位错误' }
 const GPS_ACCURACY_WARNING_METRES = 25
@@ -13,6 +14,9 @@ function formatTimestamp(timestamp: number | undefined): string { return timesta
 function formatHole(hole: number | null): string { return hole === null ? '未选择' : `Hole ${hole}` }
 function formatQuality(accuracy: number | undefined, status: LocationStatus): { label: string; className: string } { if (status !== 'success' || accuracy === undefined) return { label: '无定位', className: 'quality-none' }; if (accuracy <= 10) return { label: '良好', className: 'quality-good' }; if (accuracy <= GPS_ACCURACY_WARNING_METRES) return { label: '一般', className: 'quality-fair' }; return { label: '较差', className: 'quality-poor' } }
 function nextHole(current: number | null, direction: -1 | 1): number | null { if (current === null) return direction === 1 ? 1 : 18; const next = current + direction; return next >= 1 && next <= 18 ? next : current }
+function AppNavigation({ activeView, onChange }: { activeView: 'field' | 'scorecard'; onChange: (view: 'field' | 'scorecard') => void }) {
+  return <nav className="app-navigation" aria-label="功能模式"><button type="button" className={activeView === 'field' ? 'active' : ''} onClick={() => onChange('field')}>现场测试</button><button type="button" className={activeView === 'scorecard' ? 'active' : ''} onClick={() => onChange('scorecard')}>记分卡</button></nav>
+}
 
 export default function App() {
   const { state, setMode, setSimulatedPosition } = useLocation()
@@ -31,6 +35,7 @@ export default function App() {
   const [showDebug, setShowDebug] = useState(false)
   const [showReadiness, setShowReadiness] = useState(false)
   const [showSamples, setShowSamples] = useState(false)
+  const [activeView, setActiveView] = useState<'field' | 'scorecard'>('field')
   const [confirmationMode, setConfirmationMode] = useState<'other' | null>(null)
   const [confirmationHole, setConfirmationHole] = useState(1)
   const [geolocationPermission, setGeolocationPermission] = useState<'granted' | 'prompt' | 'denied' | 'unknown' | 'unsupported'>('unknown')
@@ -97,7 +102,9 @@ export default function App() {
     setFieldData((current) => ({ ...current, confirmationEvents: [...current.confirmationEvents, { ...event, sessionId: current.session?.sessionId ?? '' }] })); setConfirmationMode(null); setNotice('现场确认事件已记录。')
   }
 
-  return <main className="shell"><section className="status-card" aria-labelledby="app-title">
+  if (activeView === 'scorecard') return <main className="shell"><AppNavigation activeView={activeView} onChange={setActiveView} /><ScorecardView /></main>
+
+  return <main className="shell"><AppNavigation activeView={activeView} onChange={setActiveView} /><section className="status-card" aria-labelledby="app-title">
     <p className="eyebrow">移动端现场测试 · Thread 04</p><h1 id="app-title">Golf Green Vision</h1><p className="subtitle">现场测试模式</p>
     <section className="location-hero" aria-label="定位状态"><div className={`location-status status-${state.status}`} role="status" aria-live="polite"><span className="status-dot" aria-hidden="true" />{STATUS_LABELS[state.status]}</div><div className={`quality-badge ${quality.className}`}>定位：{quality.label}</div><strong className="accuracy-value">accuracy ±{location ? location.accuracy.toFixed(1) : '—'}m</strong></section>
     {state.errorMessage && <p className="error-message">{state.errorMessage}</p>}{notice && <p className="field-notice" role="status">{notice}</p>}
