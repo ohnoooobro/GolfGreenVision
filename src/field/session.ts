@@ -1,4 +1,5 @@
 import type { FieldDeviceInfo, FieldSession, FieldTestState } from './types'
+import { getFieldProgress } from './workflow'
 
 export const FIELD_APP_VERSION = '1.0.0'
 export const FIELD_BUILD_ID = import.meta.env.VITE_BUILD_ID || import.meta.env.VITE_GIT_COMMIT || `local-${FIELD_APP_VERSION}`
@@ -47,10 +48,11 @@ export function createFieldSession(options: CreateSessionOptions = {}): FieldSes
 }
 
 export function createEmptyFieldTestState(): FieldTestState {
-  return { session: null, currentActualHole: null, samples: [], confirmationEvents: [], trackPoints: [] }
+  return { session: null, currentActualHole: null, holeTees: {}, samples: [], confirmationEvents: [], trackPoints: [] }
 }
 
 export function updateFieldSessionStats(session: FieldSession, samples: FieldTestState['samples'], trackPoints: FieldTestState['trackPoints']): FieldSession {
+  // 保留 v1 completedHoles 的含义（有任一现场样本即出现），完整双采状态由 workflow 单独计算。
   const holes = [...new Set(samples.map((sample) => sample.actualHole))].sort((a, b) => a - b)
   return {
     ...session,

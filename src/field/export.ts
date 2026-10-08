@@ -1,14 +1,25 @@
 import { FIELD_APP_VERSION, FIELD_BUILD_ID, FIELD_CANDIDATE_DATASET_VERSION, FIELD_DATA_VERSION } from './session'
 import type { FieldExportDocument, FieldTestState } from './types'
+import { validateFieldExportDocument } from './validation'
+import { updateFieldSessionStats } from './session'
+
+/** 兼容旧 v1 JSON；只补充未知类别，不推断历史 T 台或 GPS。 */
+export function readFieldExportDocument(json: string): FieldExportDocument {
+  const value = JSON.parse(json) as FieldExportDocument
+  const issues = validateFieldExportDocument(value)
+  if (issues.length) throw new Error(issues.join('\n'))
+  return { ...value, holeTees: value.holeTees ?? {}, samples: value.samples.map((s) => ({ ...s, teeCategory: s.teeCategory ?? 'unknown', teeSelectionStatus: s.teeSelectionStatus ?? 'unknown' })) }
+}
 
 export function createFieldExportDocument(state: FieldTestState, generatedAt = new Date()): FieldExportDocument {
   if (!state.session) throw new Error('没有可导出的现场测试 Session。')
   return {
     schemaVersion: 1,
-    session: state.session,
-    samples: state.samples,
+    session: updateFieldSessionStats(state.session, state.samples, state.trackPoints),
+    samples: state.samples.map((s) => ({ ...s, teeCategory: s.teeCategory ?? 'unknown', teeSelectionStatus: s.teeSelectionStatus ?? 'unknown' })),
     confirmationEvents: state.confirmationEvents,
     track: state.trackPoints,
+    holeTees: state.holeTees,
     metadata: {
       generatedAt: generatedAt.toISOString(),
       exportedAt: generatedAt.toISOString(),

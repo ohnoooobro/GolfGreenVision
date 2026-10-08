@@ -1,5 +1,6 @@
 import { isValidFieldConfirmationEvent } from '../course/fieldConfirmation'
 import type { FieldExportDocument, FieldSample, FieldTestState, FieldTrackPoint } from './types'
+import { isTeeCategory } from './workflow'
 
 function validHole(value: unknown, allowNull = false): boolean {
   return (allowNull && value === null) || (typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 18)
@@ -12,7 +13,9 @@ function validSample(sample: unknown): sample is FieldSample {
     validHole(value.actualHole) && validHole(value.predictedHole, true) && typeof value.latitude === 'number' && Number.isFinite(value.latitude) && value.latitude >= -90 && value.latitude <= 90 &&
     typeof value.longitude === 'number' && Number.isFinite(value.longitude) && value.longitude >= -180 && value.longitude <= 180 && typeof value.accuracy === 'number' && Number.isFinite(value.accuracy) && value.accuracy >= 0 &&
     (value.altitude === null || typeof value.altitude === 'number') && (value.heading === null || typeof value.heading === 'number') && (value.speed === null || typeof value.speed === 'number') &&
-    (value.sampleType === 'tee' || value.sampleType === 'green') && value.source === 'field'
+    (value.sampleType === 'tee' || value.sampleType === 'green') && value.source === 'field' &&
+    (value.teeCategory === undefined || isTeeCategory(value.teeCategory)) &&
+    (value.teeSelectionStatus === undefined || ['confirmed', 'inherited', 'unknown'].includes(value.teeSelectionStatus))
 }
 
 function validTrackPoint(point: unknown): point is FieldTrackPoint {
@@ -38,6 +41,12 @@ export function validateFieldExportDocument(value: unknown): string[] {
   }
   if (!Array.isArray(document.samples)) issues.push('samples 必须是数组。')
   else document.samples.forEach((sample, index) => { if (!validSample(sample)) issues.push(`samples[${index}] 结构无效。`) })
+  if (document.holeTees !== undefined) {
+    if (!document.holeTees || typeof document.holeTees !== 'object' || Array.isArray(document.holeTees)) issues.push('holeTees 必须是对象。')
+    else Object.entries(document.holeTees).forEach(([hole, tee]) => {
+      if (!validHole(Number(hole)) || !tee || !isTeeCategory(tee.teeCategory) || !['confirmed', 'inherited', 'unknown'].includes(tee.selectionStatus)) issues.push(`holeTees[${hole}] 结构无效。`)
+    })
+  }
   if (!Array.isArray(document.confirmationEvents)) issues.push('confirmationEvents 必须是数组。')
   else document.confirmationEvents.forEach((event, index) => {
     if (!event || typeof event !== 'object' || !isValidFieldConfirmationEvent(event)) issues.push(`confirmationEvents[${index}] 结构无效。`)
@@ -58,6 +67,6 @@ export function isValidFieldExportDocument(value: unknown): value is FieldExport
   return validateFieldExportDocument(value).length === 0
 }
 
-export function isFieldStateRecoverable(state: FieldTestState): boolean {
+export function isFieldStateRecoverable(state: Pick<FieldTestState, 'session'>): boolean {
   return state.session !== null && state.session.endTime === null
 }

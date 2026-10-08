@@ -3,6 +3,9 @@ import type { LocationData } from '../location/types'
 import type { FieldCandidateMapping } from './candidateMapping'
 
 export type FieldSampleType = 'tee' | 'green'
+export type TeeCategory = 'black' | 'gold' | 'blue' | 'white' | 'red' | 'other' | 'unknown'
+export type TeeSelectionStatus = 'confirmed' | 'inherited' | 'unknown'
+export interface FieldHoleTee { teeCategory: TeeCategory; selectionStatus: TeeSelectionStatus }
 
 export interface FieldDeviceInfo {
   userAgent: string
@@ -26,6 +29,9 @@ export interface FieldSample {
   candidateMapping: FieldCandidateMapping | null
   sampleType: FieldSampleType
   source: 'field'
+  /** 旧版样本无此字段，读取和导出时补为 unknown。 */
+  teeCategory?: TeeCategory
+  teeSelectionStatus?: TeeSelectionStatus
 }
 
 export interface FieldTrackPoint {
@@ -64,6 +70,7 @@ export interface FieldTestState {
   session: FieldSession | null
   /** 当前现场人员选择的实际洞号；用于刷新/恢复，不代表系统预测。 */
   currentActualHole: number | null
+  holeTees?: Record<number, FieldHoleTee>
   samples: FieldSample[]
   confirmationEvents: FieldConfirmationRecord[]
   trackPoints: FieldTrackPoint[]
@@ -75,6 +82,8 @@ export interface FieldExportDocument {
   samples: FieldSample[]
   confirmationEvents: FieldConfirmationRecord[]
   track: FieldTrackPoint[]
+  /** 增量字段；保留 v1 原有顶层结构及样本字段。 */
+  holeTees?: Record<number, FieldHoleTee>
   metadata: {
     generatedAt: string
     exportedAt: string

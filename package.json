@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "validate:data": "vitest run tests/data-validation.test.ts",
+    "validate": "npm run validate:data",
     "test:watch": "vitest"
   },
   "dependencies": {

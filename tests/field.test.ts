@@ -23,6 +23,11 @@ import {
   undoLastFieldSample,
   updateFieldSessionStats,
   validateFieldExportDocument,
+  getFieldProgress,
+  getHoleTee,
+  readFieldExportDocument,
+  selectFieldHole,
+  selectFieldTee,
 } from '../src/field'
 import type { FieldLocationSnapshot, FieldTestState } from '../src/field'
 import type { StorageLike } from '../src/field/persistence'
@@ -264,5 +269,37 @@ describe('现场出发前检查', () => {
     const check = checkFieldReadiness({ storage: memoryStorage() }).find((item) => item.key === 'secure-context')
     expect(check).toMatchObject({ ok: false, detail: '当前页面不是安全连接，手机定位可能不可用。' })
     Object.defineProperty(window, 'isSecureContext', { configurable: true, value: original })
+  })
+})
+
+describe('现场采集流程优化', () => {
+  it('每洞独立 T 台，下一洞继承但标记未确认，仍可修改', () => {
+    const initial = createEmptyFieldTestState()
+    const hole1 = selectFieldTee(selectFieldHole(initial, 1), 1, 'white')
+    expect(getHoleTee(hole1, 1)).toEqual({ teeCategory: 'white', selectionStatus: 'confirmed' })
+    const hole2 = selectFieldHole(hole1, 2)
+    expect(getHoleTee(hole2, 2)).toEqual({ teeCategory: 'white', selectionStatus: 'inherited' })
+    const changed = selectFieldTee(hole2, 2, 'blue')
+    expect(getHoleTee(changed, 1).teeCategory).toBe('white')
+    expect(getHoleTee(changed, 2)).toEqual({ teeCategory: 'blue', selectionStatus: 'confirmed' })
+  })
+
+  it('未知 T 台可以继续采集并在旧导出读取时补为 unknown', () => {
+    const session = createFieldSession({ now: new Date(BASE_TIME) })
+    const sample = createFieldSample({ ...sampleInput(session.sessionId, 'tee', 3), teeCategory: 'unknown' })
+    expect(sample.teeCategory).toBe('unknown')
+    const legacy = JSON.stringify({ schemaVersion: 1, session, samples: [{ ...sample, teeCategory: undefined, teeSelectionStatus: undefined }], confirmationEvents: [], track: [], metadata: { generatedAt: new Date(BASE_TIME).toISOString(), exportedAt: new Date(BASE_TIME).toISOString(), appVersion: '1.0.0', buildId: 'x', courseId: 'jingshanhu', dataVersion: 'jingshanhu-v0.5', candidateDatasetVersion: 'spatial-candidates-schema-2', locationMode: 'real', exportSource: 'browser-local-storage' } })
+    expect(readFieldExportDocument(legacy).samples[0].teeCategory).toBe('unknown')
+  })
+
+  it('分别统计 Tee、Green、完整洞和漏采，不追填其他洞', () => {
+    const session = createFieldSession({ now: new Date(BASE_TIME) })
+    const tee = createFieldSample(sampleInput(session.sessionId, 'tee', 1))
+    const green = createFieldSample(sampleInput(session.sessionId, 'green', 2))
+    const progress = getFieldProgress([tee, green])
+    expect(progress.teeCount).toBe(1)
+    expect(progress.greenCount).toBe(1)
+    expect(progress.completedHoles).toEqual([])
+    expect(progress.partialHoles.map((item) => item.hole)).toEqual([1, 2])
   })
 })

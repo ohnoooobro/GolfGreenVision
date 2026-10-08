@@ -1,5 +1,5 @@
 import type { FieldCandidateMapping } from './candidateMapping'
-import type { FieldLocationSnapshot, FieldSample, FieldSampleType } from './types'
+import type { FieldLocationSnapshot, FieldSample, FieldSampleType, TeeCategory, TeeSelectionStatus } from './types'
 
 function createId(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return `${prefix}-${crypto.randomUUID()}`
@@ -14,6 +14,8 @@ export interface CreateFieldSampleInput {
   sampleType: FieldSampleType
   candidateMapping: FieldCandidateMapping | null
   id?: string
+  teeCategory?: TeeCategory
+  teeSelectionStatus?: TeeSelectionStatus
 }
 
 export function createFieldSample(input: CreateFieldSampleInput): FieldSample {
@@ -36,6 +38,8 @@ export function createFieldSample(input: CreateFieldSampleInput): FieldSample {
     candidateMapping: input.candidateMapping,
     sampleType: input.sampleType,
     source: 'field',
+    teeCategory: input.teeCategory ?? 'unknown',
+    teeSelectionStatus: input.teeSelectionStatus ?? (input.teeCategory && input.teeCategory !== 'unknown' ? 'confirmed' : 'unknown'),
   }
 }
 
