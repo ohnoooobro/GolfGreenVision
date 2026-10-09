@@ -31,6 +31,7 @@ data/derived/jingshanhu/orthophoto_2023_tiles/
 data/derived/jingshanhu/orthophoto_2023_cache/
 
 scripts/__pycache__/
+tests/__pycache__/
 
 tmp/
 temp/
