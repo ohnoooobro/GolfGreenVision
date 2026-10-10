@@ -76,6 +76,11 @@ export interface FieldTestState {
   trackPoints: FieldTrackPoint[]
 }
 
+export interface FieldSessionHistoryEntry {
+  archivedAt: string
+  state: FieldTestState
+}
+
 export interface FieldExportDocument {
   schemaVersion: 1
   session: FieldSession

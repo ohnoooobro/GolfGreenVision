@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { createFieldConfirmationEvent } from '../src/course/fieldConfirmation'
 import {
   FIELD_STORAGE_KEY,
+  FIELD_HISTORY_STORAGE_KEY,
+  archiveFieldSession,
   clearFieldTestState,
   checkFieldReadiness,
   createEmptyFieldTestState,
@@ -17,6 +19,8 @@ import {
   isValidFieldExportDocument,
   isStorageAvailable,
   loadFieldTestState,
+  loadFieldSessionHistory,
+  startNextFieldSession,
   saveFieldTestState,
   serializeFieldExport,
   shouldRecordTrackPoint,
@@ -250,6 +254,49 @@ describe('现场状态持久化与导出', () => {
     const ended: FieldTestState = { ...active, session: endFieldSession(session, [], [], new Date(BASE_TIME + 1_000)) }
     expect(isFieldStateRecoverable(ended)).toBe(false)
     expect(isFieldStateRecoverable(createEmptyFieldTestState())).toBe(false)
+  })
+
+  it('结束球局后归档一次并创建独立的新 Session，历史可独立读取', () => {
+    const storage = memoryStorage()
+    const firstSession = endFieldSession(createFieldSession({ now: new Date(BASE_TIME) }), [], [], new Date(BASE_TIME + 60_000))
+    const first: FieldTestState = { ...createEmptyFieldTestState(), session: firstSession }
+    expect(saveFieldTestState(first, storage)).toBe(true)
+    const result = startNextFieldSession(first, { now: new Date(BASE_TIME + 120_000) }, storage)
+    expect(result.ok).toBe(true)
+    expect(result.state?.session?.sessionId).not.toBe(firstSession.sessionId)
+    expect(result.state?.samples).toEqual([])
+    expect(loadFieldSessionHistory(storage)).toHaveLength(1)
+    expect(loadFieldSessionHistory(storage)[0].state).toEqual(first)
+    expect(storage.getItem(FIELD_HISTORY_STORAGE_KEY)).toContain(firstSession.sessionId)
+    expect(loadFieldTestState(storage)).toEqual(result.state)
+  })
+
+  it('重复归档不会产生重复历史记录，归档写入失败时旧数据仍在', () => {
+    const storage = memoryStorage()
+    const session = endFieldSession(createFieldSession({ now: new Date(BASE_TIME) }), [], [], new Date(BASE_TIME + 1_000))
+    const state: FieldTestState = { ...createEmptyFieldTestState(), session }
+    expect(archiveFieldSession(state, storage).ok).toBe(true)
+    expect(archiveFieldSession(state, storage).ok).toBe(true)
+    expect(loadFieldSessionHistory(storage)).toHaveLength(1)
+    const failing: StorageLike = { getItem: storage.getItem, setItem: (key, value) => { if (key === FIELD_HISTORY_STORAGE_KEY) throw new Error('quota'); storage.setItem(key, value) }, removeItem: storage.removeItem }
+    const other = endFieldSession(createFieldSession({ now: new Date(BASE_TIME + 2_000) }), [], [], new Date(BASE_TIME + 3_000))
+    expect(archiveFieldSession({ ...createEmptyFieldTestState(), session: other }, failing).ok).toBe(false)
+    expect(loadFieldSessionHistory(storage)).toHaveLength(1)
+  })
+
+  it('新 Session 写入失败时恢复旧当前状态，历史仍可重试', () => {
+    const base = memoryStorage()
+    const first = endFieldSession(createFieldSession({ now: new Date(BASE_TIME) }), [], [], new Date(BASE_TIME + 1_000))
+    const old: FieldTestState = { ...createEmptyFieldTestState(), session: first }
+    saveFieldTestState(old, base)
+    let failCurrent = true
+    const storage: StorageLike = { getItem: base.getItem, setItem: (key, value) => { if (key === FIELD_STORAGE_KEY && failCurrent) throw new Error('quota'); base.setItem(key, value) }, removeItem: base.removeItem }
+    const result = startNextFieldSession(old, { now: new Date(BASE_TIME + 2_000) }, storage)
+    expect(result.ok).toBe(false)
+    expect(loadFieldTestState(storage)).toEqual(old)
+    expect(loadFieldSessionHistory(storage)).toHaveLength(1)
+    failCurrent = false
+    expect(startNextFieldSession(old, { now: new Date(BASE_TIME + 3_000) }, storage).ok).toBe(true)
   })
 })
 

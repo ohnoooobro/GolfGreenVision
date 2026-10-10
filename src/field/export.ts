@@ -1,7 +1,6 @@
 import { FIELD_APP_VERSION, FIELD_BUILD_ID, FIELD_CANDIDATE_DATASET_VERSION, FIELD_DATA_VERSION } from './session'
 import type { FieldExportDocument, FieldTestState } from './types'
 import { validateFieldExportDocument } from './validation'
-import { updateFieldSessionStats } from './session'
 
 /** 兼容旧 v1 JSON；只补充未知类别，不推断历史 T 台或 GPS。 */
 export function readFieldExportDocument(json: string): FieldExportDocument {
@@ -15,7 +14,7 @@ export function createFieldExportDocument(state: FieldTestState, generatedAt = n
   if (!state.session) throw new Error('没有可导出的现场测试 Session。')
   return {
     schemaVersion: 1,
-    session: updateFieldSessionStats(state.session, state.samples, state.trackPoints),
+    session: { ...state.session },
     samples: state.samples.map((s) => ({ ...s, teeCategory: s.teeCategory ?? 'unknown', teeSelectionStatus: s.teeSelectionStatus ?? 'unknown' })),
     confirmationEvents: state.confirmationEvents,
     track: state.trackPoints,
@@ -38,9 +37,12 @@ export function serializeFieldExport(state: FieldTestState, generatedAt = new Da
   return JSON.stringify(createFieldExportDocument(state, generatedAt), null, 2)
 }
 
-export function fieldExportFilename(date = new Date()): string {
+export function fieldExportFilename(date = new Date(), sessionId?: string, courseId = 'jingshanhu'): string {
   const iso = date.toISOString().slice(0, 10)
-  return `jingshanhu-field-${iso}.json`
+  if (!sessionId) return `${courseId}-field-${iso}.json`
+  const shortId = sessionId.replace(/[^a-zA-Z0-9_-]/g, '').slice(-12) || 'session'
+  courseId = courseId.replace(/[^a-zA-Z0-9_-]/g, '') || 'course'
+  return `${courseId}-field-${iso}-${shortId}.json`
 }
 
 export function downloadFieldExport(state: FieldTestState, date = new Date()): string {
@@ -50,8 +52,10 @@ export function downloadFieldExport(state: FieldTestState, date = new Date()): s
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = fieldExportFilename(date)
+  anchor.download = fieldExportFilename(new Date(state.session!.startTime), state.session?.sessionId, state.session?.courseId)
+  document.body.appendChild(anchor)
   anchor.click()
-  window.setTimeout(() => URL.revokeObjectURL(url), 0)
+  anchor.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
   return json
 }
